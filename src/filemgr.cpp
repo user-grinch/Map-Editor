@@ -51,6 +51,7 @@ void FileMgr::ImportIPL(std::string fileName)
             Utils::GetDegreeInRange(&rot.z);
             data.SetRotation(rot);
             data.SetQuat({rx, ry, rz, rw});
+            data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
 
             // Setting quat messes with z coord?
             Command<Commands::SET_OBJECT_COORDINATES>(hObj, pos.x, pos.y, pos.z);

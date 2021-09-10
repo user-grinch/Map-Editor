@@ -37,10 +37,14 @@ public:
     static inline float m_fFOV = 70.0f; // camera field of view
     static inline CVector m_vecWorldPos;
     static inline CEntity *m_HoveredEntity;
-    static inline int copiedModel = 0;
     static inline CVector m_vecRenderRot;
     static inline bool m_bObjBrowserAutoRot;
     static inline ImVec2 m_fViewportSize;
+    struct COPY_MODEL
+    {
+        static inline int m_nModel;
+        static inline CVector m_vecRot;
+    };
     
     Viewport() = delete;
     Viewport(Viewport&) = delete;

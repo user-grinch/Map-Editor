@@ -210,16 +210,16 @@ void ObjManager::HighlightSelectedObj(CObject *pObj)
     DrawColModel(*matrix, *pColModel);
 }
 
-void ObjManager::ExData::SetRotation(CVector rot, bool updateQuat)
+void ObjManager::ExData::SetRotation(CVector rot)
 {
 	m_vecRot = rot;
 	Command<Commands::SET_OBJECT_ROTATION>(handle, rot.x, rot.y, rot.z);
 
-	// CAREFUL ABOUT ITS USAGE
-	if (updateQuat)
+	if (!pObj->m_pRwObject)
 	{
-		Command<Commands::GET_OBJECT_QUATERNION>(handle, &m_fQuat.x, &m_fQuat.y, &m_fQuat.z, &m_fQuat.w);
+		pObj->CreateRwObject();
 	}
+	Command<Commands::GET_OBJECT_QUATERNION>(handle, &m_fQuat.x, &m_fQuat.y, &m_fQuat.z, &m_fQuat.w);
 }
 
 CVector ObjManager::ExData::GetRotation()

@@ -25,7 +25,7 @@ void Interface::SearchContextMenu(std::string& root, std::string& key, std::stri
 
     if (ImGui::MenuItem("Copy"))
     {
-        Viewport::copiedModel = std::stoi(value);
+        Viewport::COPY_MODEL::m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     };
 }
@@ -642,15 +642,15 @@ void Interface::DrawInfoMenu()
                         }
                         if (ImGui::SliderFloat("Rot X##Obj", &rot.x, 0.0f, 360.0f))
                         {
-                            data.SetRotation(rot, true);
+                            data.SetRotation(rot);
                         }
                         if (ImGui::SliderFloat("Rot Y##Obj", &rot.y, 0.0f, 360.0f))
                         {
-                            data.SetRotation(rot, true);
+                            data.SetRotation(rot);
                         }
                         if (ImGui::SliderFloat("Rot Z##Obj", &rot.z, 0.0f, 360.0f))
                         {
-                            data.SetRotation(rot, true);
+                            data.SetRotation(rot);
                         }
                         ImGui::Spacing();
                     }
@@ -936,7 +936,7 @@ void Interface::DrawInfoMenu()
                 ImGui::Spacing();
                 if (ImGui::Button("Copy render object", Utils::GetSize()))
                 {
-                    Viewport::copiedModel = m_nBrowserSelectedModelId;
+                    Viewport::COPY_MODEL::m_nModel = m_nBrowserSelectedModelId;
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
@@ -1061,7 +1061,7 @@ void Interface::DrawInfoMenu()
                         {   
                             if (ImGui::MenuItem("Copy"))
                             {
-                                 Viewport::copiedModel = std::stoi(value);
+                                 Viewport::COPY_MODEL::m_nModel = std::stoi(value);
                                 CHud::SetHelpMessage("Object Copied", false, false, false);
                             }
                             if (ImGui::MenuItem("Remove"))

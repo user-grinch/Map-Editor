@@ -1,5 +1,4 @@
 #pragma once
-#define RAD_TO_DEG(x) x*-57.2958f
 
 class FileMgr
 {

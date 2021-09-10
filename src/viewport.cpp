@@ -478,32 +478,47 @@ static void ContextMenu_Copy()
 {
 	if (Viewport::m_HoveredEntity)
 	{
-		Viewport::copiedModel = Viewport::m_HoveredEntity->m_nModelIndex;
+		Viewport::COPY_MODEL::m_nModel = Viewport::m_HoveredEntity->m_nModelIndex;
+
+		CVector &rot = Viewport::COPY_MODEL::m_vecRot;
+		// Store rotation
+		CallMethod<0x59A840, int>((int)Viewport::m_HoveredEntity->GetMatrix(), 
+						&rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
+
+		rot.x = RAD_TO_DEG(rot.x);
+		rot.y = RAD_TO_DEG(rot.y);
+		rot.z = RAD_TO_DEG(rot.z);
+
+		// 0 -> 360
+		Utils::GetDegreeInRange(&rot.x);
+		Utils::GetDegreeInRange(&rot.y);
+		Utils::GetDegreeInRange(&rot.z);
 		CHud::SetHelpMessage("Object Copied", false, false, false);
 	}
 }
 
 static void ContextMenu_Paste()
 {
-	if (!Viewport::copiedModel)
+	if (!Viewport::COPY_MODEL::m_nModel)
 	{
 		return;
 	}
 	
 	CEntity *pEntity;
 	CVector pos;
-	if (Command<Commands::IS_MODEL_AVAILABLE>(Viewport::copiedModel)
+	if (Command<Commands::IS_MODEL_AVAILABLE>(Viewport::COPY_MODEL::m_nModel)
 	&& Utils::TraceEntity(pEntity, pos))
 	{
 		int hObj;
-		Command<Commands::REQUEST_MODEL>(Viewport::copiedModel);
+		Command<Commands::REQUEST_MODEL>(Viewport::COPY_MODEL::m_nModel);
 		Command<Commands::LOAD_ALL_MODELS_NOW>();
-		Command<Commands::CREATE_OBJECT>(Viewport::copiedModel, pos.x, pos.y, pos.z, &hObj);
-		Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(Viewport::copiedModel);
+		Command<Commands::CREATE_OBJECT>(Viewport::COPY_MODEL::m_nModel, pos.x, pos.y, pos.z, &hObj);
+		Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(Viewport::COPY_MODEL::m_nModel);
 		
 		CObject *pEntity = CPools::GetObject(hObj);
 		auto &data = ObjManager::m_objData.Get(pEntity);
-		data.m_modelName = ObjManager::FindNameFromModel(Viewport::copiedModel);
+		data.m_modelName = ObjManager::FindNameFromModel(Viewport::COPY_MODEL::m_nModel);
+		data.SetRotation(Viewport::COPY_MODEL::m_vecRot);
 
 		ObjManager::m_pVecEntities.push_back(pEntity);
 		ObjManager::m_pSelected = pEntity;
@@ -670,7 +685,7 @@ void Viewport::ProcessSelectedObjectInputs()
 				auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
 				CVector rot = data.GetRotation();
 				rot.z += 3*wheel;
-				data.SetRotation(rot, true);
+				data.SetRotation(rot);
 			}
 			else
 			{

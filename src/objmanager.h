@@ -30,7 +30,7 @@ private:
         *   Game crashes to get or set quats of far away objects
         *   So we're basically storing them here with custom functions
         */
-        void SetRotation(CVector rot, bool updateQuat = false);
+        void SetRotation(CVector rot);
         CVector GetRotation();
         QUAT GetQuat();
         void SetQuat(QUAT quat);

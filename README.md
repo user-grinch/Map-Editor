@@ -18,5 +18,4 @@ This is still in alpha stage. There might be a lot of bugs present. I'll add a r
 
 ## Projects used
 1. [ImGui](https://github.com/ocornut/imgui)
-2. [MinHook](https://github.com/TsudaKageyu/minhook)
-3. [Plugin SDK](https://github.com/DK22Pac/plugin-sdk)
+2. [Plugin SDK](https://github.com/DK22Pac/plugin-sdk)

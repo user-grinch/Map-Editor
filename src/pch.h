@@ -4,6 +4,7 @@
 #define DISCORD_INVITE "https://discord.gg/ZzW7kmf"
 #define GITHUB_LINK "https://github.com/user-grinch/Map-Editor"
 #define HRESULT int
+#define RAD_TO_DEG(x) x*-57.2958f
 
 #include <d3d9.h>
 #include <sstream>
