@@ -49,7 +49,7 @@ void FileMgr::ImportIPL(std::string fileName)
             Utils::GetDegreeInRange(&rot.x);
             Utils::GetDegreeInRange(&rot.y);
             Utils::GetDegreeInRange(&rot.z);
-            data.SetRotation(rot);
+            data.SetRotation(rot, false);
             data.SetQuat({rx, ry, rz, rw});
             data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
 

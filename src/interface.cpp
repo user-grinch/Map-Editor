@@ -148,7 +148,7 @@ void Interface::WelcomeMenu()
         Widgets::CenterdText(std::string("(") + BUILD_NUMBER + ")");
         ImGui::Dummy(ImVec2(0, 10));
 
-        ImGui::TextWrapped("Click on the `Controls` button to get started. If you find have suggestions let me know on Discord.");
+        ImGui::TextWrapped("Click on the `Controls` button to get started. If you have suggestions let me know on Discord.");
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::TextWrapped("Before you go ahead and spam me with bug reports, keep in mind this is a alpha release, not even beta! Do some reasearch if the bug was already reported or not. Try on a FRESH GAME first. I'm NOT fixing bugs with X camera mod or Y graphics mod.");
         ImGui::Dummy(ImVec2(0, 30));
