@@ -685,6 +685,17 @@ void Viewport::ProcessSelectedObjectInputs()
 				auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
 				CVector rot = data.GetRotation();
 				rot.z += 3*wheel;
+
+				if (rot.z > 360.0f)
+				{
+					rot.z -= 360.0f;
+				}
+
+				if (rot.z < 0.0f)
+				{
+					rot.z += 360.0f;
+				}
+
 				data.SetRotation(rot);
 			}
 			else
