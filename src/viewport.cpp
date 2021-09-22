@@ -206,7 +206,7 @@ void Viewport::Process()
 
 	// -------------------------------------------------
 	// vars
-	int deltaSpeed = m_fSpeed * (CTimer::m_snTimeInMillisecondsNonClipped -
+	int deltaSpeed = m_nMul * 0.08f * (CTimer::m_snTimeInMillisecondsNonClipped -
 						CTimer::m_snPreviousTimeInMillisecondsNonClipped);
 	CPlayerPed* pPlayer = FindPlayerPed(-1);
 	int hPlayer = CPools::GetPedRef(pPlayer);

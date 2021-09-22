@@ -70,6 +70,11 @@ void Interface::ImportMenu()
     ImGui::SameLine();
     if (ImGui::Button("Clear objects", Utils::GetSize(2)))
     {
+        for (auto &pObj : ObjManager::m_pVecEntities)
+        {
+            pObj->Remove();
+        }
+        ObjManager::m_pSelected = nullptr;
         ObjManager::m_pVecEntities.clear();
         CHud::SetHelpMessage("Current objects cleared", false, false, false);
     }
@@ -678,7 +683,7 @@ void Interface::DrawInfoMenu()
                         TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
 		                Command<Commands::CAMERA_PERSIST_FOV>(true);
                     }
-                    ImGui::SliderFloat("Move speed", &Viewport::m_fSpeed, 0.0f, 2.0f);
+                    ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10);
                     ImGui::Spacing();
 
                     // ---------------------------------------------------

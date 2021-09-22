@@ -33,7 +33,7 @@ public:
 	static inline bool m_bShowHoverMenu; // tooltup menu showing info on hover
     static inline bool m_bBeingHovered;
     static inline VIEWPORT_STATE m_eViewportMode = EDIT_MODE; 
-    static inline float m_fSpeed = 0.08f; // movement speed for viewport realted controls
+    static inline int m_nMul = 1; // movement speed multiplier for viewport realted controls
     static inline float m_fFOV = 70.0f; // camera field of view
     static inline CVector m_vecWorldPos;
     static inline CEntity *m_HoveredEntity;

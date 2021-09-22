@@ -1,5 +1,5 @@
 # Map Editor
-In Game Map Editor for Grand Theft Auto Sanandreas. Press <kbd>Left Ctrl</kbd> + <kbd>Tab</kbd> to open the menu. Video [here](https://streamable.com/b89dgk)
+In Game Map Editor for Grand Theft Auto Sanandreas. Press <kbd>Left Ctrl</kbd> + <kbd>Tab</kbd> to open the menu. Video [here](https://www.youtube.com/watch?v=h0GLNH-ydbQ)
 
 This is still in alpha stage. There might be a lot of bugs present. I'll add a release when it's a bit more stable. Alpha binaries are at the discord server.
 
