@@ -35,7 +35,7 @@ void Viewport::Init()
 	m_fTotalMouse.y = 0;
 	pos.z -= PLAYER_Z_OFFSET;
 	pPlayer->SetPosn(pos);
-
+	CWorld::Remove(pPlayer);
 	TheCamera.LerpFOV(TheCamera.FindCamFOV(), m_fFOV, 1000, true);
 	Command<Commands::CAMERA_PERSIST_FOV>(true);
 
@@ -393,6 +393,7 @@ void Viewport::Shutdown()
 
 	pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, &pPlayerEntity) + 1.0f;
 	pPlayer->SetPosn(pos);
+	CWorld::Add(pPlayer);
 	
 	Command<Commands::FREEZE_CHAR_POSITION_AND_DONT_LOAD_COLLISION>(hPlayer, false);
 	Command<Commands::SET_CHAR_COLLISION>(hPlayer, true);

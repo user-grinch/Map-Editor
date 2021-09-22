@@ -1,6 +1,6 @@
 #pragma once
 #include "plugin.h"
-#define PLAYER_Z_OFFSET 20.0f
+#define PLAYER_Z_OFFSET 0.0f
 #define MOUSE_FACTOR_X 13.0f
 #define MOUSE_FACTOR_Y 6.0f
 
