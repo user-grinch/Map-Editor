@@ -206,8 +206,12 @@ void Viewport::Process()
 
 	// -------------------------------------------------
 	// vars
-	int deltaSpeed = m_nMul * 0.08f * (CTimer::m_snTimeInMillisecondsNonClipped -
+	int delta = (CTimer::m_snTimeInMillisecondsNonClipped -
 						CTimer::m_snPreviousTimeInMillisecondsNonClipped);
+						
+	int ratio = 1 / (1 + (delta * m_nMul));
+	int speed = m_nMul + m_nMul * ratio * delta;
+
 	CPlayerPed* pPlayer = FindPlayerPed(-1);
 	int hPlayer = CPools::GetPedRef(pPlayer);
 	CVector pos = pPlayer->GetPosition();
@@ -276,7 +280,7 @@ void Viewport::Process()
 
 	if (KeyPressed(VK_LSHIFT))
 	{
-		deltaSpeed *= 2;
+		speed *= 2;
 	}
 
 	if(m_eViewportMode == VIEW_MODE)
@@ -309,41 +313,41 @@ void Viewport::Process()
 
 	if (KeyPressed(VK_RCONTROL))
 	{
-		deltaSpeed /= 2;
+		speed /= 2;
 	}
 
 	if (KeyPressed(VK_RSHIFT))
 	{
-		deltaSpeed *= 2;
+		speed *= 2;
 	}
 
 	if (KeyPressed(VK_KEY_W) || KeyPressed(VK_KEY_S))
 	{
 		if (KeyPressed(VK_KEY_S))
 		{
-			deltaSpeed *= -1;
+			speed *= -1;
 		}
 
 		float angle;
 		Command<Commands::GET_CHAR_HEADING>(hPlayer, &angle);
-		pos.x += deltaSpeed * cos(angle * 3.14159f / 180.0f);
-		pos.y += deltaSpeed * sin(angle * 3.14159f / 180.0f);
-		pos.z += deltaSpeed * 2 * sin(m_fTotalMouse.y / 3 * 3.14159f / 180.0f);
+		pos.x += speed * cos(angle * 3.14159f / 180.0f);
+		pos.y += speed * sin(angle * 3.14159f / 180.0f);
+		pos.z += speed * 2 * sin(m_fTotalMouse.y / 3 * 3.14159f / 180.0f);
 	}
 
 	if (KeyPressed(VK_KEY_A) || KeyPressed(VK_KEY_D))
 	{
 		if (KeyPressed(VK_KEY_A))
 		{
-			deltaSpeed *= -1;
+			speed *= -1;
 		}
 
 		float angle;
 		Command<Commands::GET_CHAR_HEADING>(hPlayer, &angle);
 		angle -= 90;
 
-		pos.x += deltaSpeed * cos(angle * 3.14159f / 180.0f);
-		pos.y += deltaSpeed * sin(angle * 3.14159f / 180.0f);
+		pos.x += speed * cos(angle * 3.14159f / 180.0f);
+		pos.y += speed * sin(angle * 3.14159f / 180.0f);
 	}
 
 	// -------------------------------------------------
