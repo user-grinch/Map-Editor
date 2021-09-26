@@ -53,49 +53,57 @@ void Interface::ProcessContextMenu()
 
 void Interface::ImportMenu()
 {
-    ImGui::Spacing();
-    ImGui::Text("Notes,");
-    ImGui::TextWrapped("Files are imported from '(game dir)/MapEditor' directory");
-    ImGui::TextWrapped("Imported objects will be merged with current ones!");
-    ImGui::TextWrapped("Use a limit adjuster if you're going to load a lot of objects!");
-    ImGui::TextWrapped("You game may freeze while loading!");
-    ImGui::Dummy(ImVec2(0, 20));
-    static std::string selectedFileName = "";
-
-    if (ImGui::Button("Import IPL", Utils::GetSize(2)))
-    {
-        FileMgr::ImportIPL(selectedFileName.c_str());
-        m_bShowPopup = false;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Clear objects", Utils::GetSize(2)))
-    {
-        for (auto &pObj : ObjManager::m_pVecEntities)
-        {
-            pObj->Remove();
-        }
-        ObjManager::m_pSelected = nullptr;
-        ObjManager::m_pVecEntities.clear();
-        CHud::SetHelpMessage("Current objects cleared", false, false, false);
-    }
-    ImGui::Spacing();
-    // gen file list
     std::filesystem::path path = PLUGIN_PATH((char*)"/MapEditor/");
-    if(ImGui::BeginChild("ImportMenu"))
+    if (std::filesystem::exists(path))
     {
-        for (const auto & entry : std::filesystem::directory_iterator(path))
+        ImGui::Spacing();
+        ImGui::Text("Notes,");
+        ImGui::TextWrapped("Files are imported from '(game dir)/MapEditor' directory");
+        ImGui::TextWrapped("Imported objects will be merged with current ones!");
+        ImGui::TextWrapped("Use a limit adjuster if you're going to load a lot of objects!");
+        ImGui::TextWrapped("You game may freeze while loading!");
+        ImGui::Dummy(ImVec2(0, 20));
+        static std::string selectedFileName = "";
+
+        if (ImGui::Button("Import IPL", Utils::GetSize(2)))
         {
-            if (entry.path().filename().string().ends_with(".ipl"))
+            FileMgr::ImportIPL(selectedFileName.c_str());
+            m_bShowPopup = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Clear objects", Utils::GetSize(2)))
+        {
+            for (auto &pObj : ObjManager::m_pVecEntities)
             {
-                std::string fileName = entry.path().filename().string();
-                
-                if (ImGui::MenuItem(fileName.c_str(), NULL, selectedFileName == fileName))
+                pObj->Remove();
+            }
+            ObjManager::m_pSelected = nullptr;
+            ObjManager::m_pVecEntities.clear();
+            CHud::SetHelpMessage("Current objects cleared", false, false, false);
+        }
+        ImGui::Spacing();
+        
+        if(ImGui::BeginChild("ImportMenu"))
+        { 
+            for (const auto & entry : std::filesystem::directory_iterator(path))
+            {
+                if (entry.path().filename().string().ends_with(".ipl"))
                 {
-                    selectedFileName = fileName;
+                    std::string fileName = entry.path().filename().string();
+                    
+                    if (ImGui::MenuItem(fileName.c_str(), NULL, selectedFileName == fileName))
+                    {
+                        selectedFileName = fileName;
+                    }
                 }
             }
+            
+            ImGui::EndChild();
         }
-        ImGui::EndChild();
+    }
+    else
+    {
+        ImGui::Text("Map Editor folder not found!");
     }
 }
 
