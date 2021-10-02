@@ -8,7 +8,7 @@ void EditorThread(void* param)
 	// -------------------------------------------------------------
 	// wait for the game to initialize
 	static bool bGameInit = false;
-	Events::initRwEvent += []
+	Events::initGameEvent += []
 	{
 		bGameInit = true;
 	};
@@ -19,7 +19,7 @@ void EditorThread(void* param)
 	}
 	// -------------------------------------------------------------
 
-	flog << "Starting...\nVersion: "  EDITOR_VERSION  "\nAuthor: Grinch_\nDiscord: " DISCORD_INVITE "\nMore Info: "
+	gLog << "Starting...\nVersion: "  EDITOR_VERSION  "\nAuthor: Grinch_\nDiscord: " DISCORD_INVITE "\nMore Info: "
 		GITHUB_LINK "\n" << std::endl;
 
 	Editor menu;

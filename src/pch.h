@@ -30,5 +30,5 @@
 
 using namespace plugin;
 
-extern std::ofstream flog;
-extern CJson config;
+extern std::ofstream gLog;
+extern CJson gConfig;

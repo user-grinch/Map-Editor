@@ -20,12 +20,12 @@ Editor::Editor()
 	windowCallback = std::bind(&DrawWindow);
 
 	// Load config data
-	Interface::m_bAutoSnapToGround = config.GetValue("editor.autoSnap", true); 
-	Interface::m_bShowInfoMenu = config.GetValue("editor.showInfoMenu", true); 
-	ObjManager::m_bDrawBoundingBox = config.GetValue("editor.drawBoundingBox", true);
-    ObjManager::m_bDrawAxisLines = config.GetValue("editor.drawAxisLines", true);
-	Viewport::m_bShowHoverMenu = config.GetValue("editor.showHoverMenu", true);
-	Interface::m_bWelcomeScreenDisplayed = config.GetValue("editor.welcomeDisplayed", false); 
+	Interface::m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true); 
+	Interface::m_bShowInfoMenu = gConfig.GetValue("editor.showInfoMenu", true); 
+	ObjManager::m_bDrawBoundingBox = gConfig.GetValue("editor.drawBoundingBox", true);
+    ObjManager::m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
+	Viewport::m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);
+	Interface::m_bWelcomeScreenDisplayed = gConfig.GetValue("editor.welcomeDisplayed", false); 
 
 	if (!Interface::m_bWelcomeScreenDisplayed)
 	{
@@ -33,7 +33,7 @@ Editor::Editor()
 		Interface::m_popupTitle = "Map Editor";
 		Interface::m_pPopupFunc = Interface::WelcomeMenu;
 		Interface::m_bWelcomeScreenDisplayed = true;
-		config.SetValue("editor.welcomeDisplayed", Interface::m_bWelcomeScreenDisplayed);
+		gConfig.SetValue("editor.welcomeDisplayed", Interface::m_bWelcomeScreenDisplayed);
 	}
 
 	Events::processScriptsEvent += []()
@@ -53,7 +53,7 @@ Editor::Editor()
 				Interface::m_bObjectBrowserShown = false;
 				Interface::m_bOpenObjectBrowser = false;
 				m_bShowMouse = false;
-				config.WriteToDisk();
+				gConfig.WriteToDisk();
 				Viewport::Shutdown();
 			}
 		}
@@ -88,7 +88,7 @@ void Editor::DrawWindow()
 		if (!bTriedtoHideCursor)
 		{
 			m_bShowMouse = false;
-			config.WriteToDisk();
+			gConfig.WriteToDisk();
 			bTriedtoHideCursor = true;
 		}
 	}

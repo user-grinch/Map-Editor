@@ -489,23 +489,23 @@ void Interface::DrawMainMenuBar()
             
             if (ImGui::MenuItem("Auto snap to ground", NULL, &Interface::m_bAutoSnapToGround))
             {
-                config.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
+                gConfig.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
             }
             if (ImGui::MenuItem("Axis lines", NULL, &ObjManager::m_bDrawAxisLines))
             {
-                config.SetValue("editor.drawAxisLines", ObjManager::m_bDrawAxisLines);
+                gConfig.SetValue("editor.drawAxisLines", ObjManager::m_bDrawAxisLines);
             }
             if (ImGui::MenuItem("Bounding box", NULL, &ObjManager::m_bDrawBoundingBox))
             {
-                config.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
+                gConfig.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
             }
             if (ImGui::MenuItem("Hover tooltip", NULL, &Viewport::m_bShowHoverMenu))
             {
-                config.SetValue("editor.showHoverMenu", Viewport::m_bShowHoverMenu);
+                gConfig.SetValue("editor.showHoverMenu", Viewport::m_bShowHoverMenu);
             }
             if (ImGui::MenuItem("Info panel", NULL, &m_bShowInfoMenu))
             {
-                config.SetValue("editor.showInfoMenu", m_bShowInfoMenu);
+                gConfig.SetValue("editor.showInfoMenu", m_bShowInfoMenu);
             }
             if (ImGui::MenuItem("No pedstrain", NULL, &bNoPeds))
             {

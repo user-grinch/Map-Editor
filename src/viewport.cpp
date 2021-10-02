@@ -414,11 +414,6 @@ void Viewport::Shutdown()
 	m_bInitialized = false;
 }
 
-static void RenderLineWithClipping(float x1, float y1, float z1, float x2, float y2, float z2, unsigned int c1, unsigned int c2)
-{
-	((void (__cdecl *)(float, float, float, float, float, float, unsigned int, unsigned int))0x6FF4F0)(x1, y1, z1, x2, y2, z2, c1, c2);
-}
-
 void Viewport::DrawOverlay()
 {
     if (ImGui::IsMouseClicked(1))
@@ -652,6 +647,14 @@ void Viewport::ProcessSelectedObjectInputs()
 					{
 						auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
 						CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
+
+						if (Interface::m_bAutoSnapToGround)
+						{
+							float offZ = objPos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+							objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
+							off.z = pos.z - objPos.z;
+						}
+
 						Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
 					}
 					else
@@ -666,15 +669,15 @@ void Viewport::ProcessSelectedObjectInputs()
 			}
 			else
 			{
-				if (bObjectBeingDragged 
-				&& Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
-				{
-					auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-					CVector pos = ObjManager::m_pSelected->GetPosition();
-					float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
-					pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
-					Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
-				}
+				// if (bObjectBeingDragged 
+				// && Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
+				// {
+				// 	auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+				// 	CVector pos = ObjManager::m_pSelected->GetPosition();
+				// 	float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+				// 	pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
+				// 	Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
+				// }
 				bObjectBeingDragged = false;
 			}
 		}

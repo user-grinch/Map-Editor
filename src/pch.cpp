@@ -1,4 +1,4 @@
 #include "pch.h"
 
-std::ofstream flog = std::ofstream("MapEditor.log");
-CJson config("config");
+std::ofstream gLog = std::ofstream("MapEditor.log");
+CJson gConfig("config");

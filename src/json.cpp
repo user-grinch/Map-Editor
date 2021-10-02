@@ -20,7 +20,7 @@ CJson::CJson(const char* name)
 		}
 		catch (...)
 		{
-			flog << "Error trying to read " << m_FilePath << std::endl;
+			gLog << "Error trying to read " << m_FilePath << std::endl;
 			m_Data = "{}"_json;
 		}
 	}
@@ -30,11 +30,11 @@ CJson::CJson(const char* name)
 
 		if (m_FilePath.find("config"))
 		{
-			flog << "Creating config.json file" << std::endl;
+			gLog << "Creating config.json file" << std::endl;
 		}
 		else
 		{
-			flog << "Failed to locate file " << m_FilePath << std::endl;
+			gLog << "Failed to locate file " << m_FilePath << std::endl;
 		}
 	}
 }
