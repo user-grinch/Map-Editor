@@ -179,7 +179,7 @@ std::string ObjManager::FindNameFromModel(int model)
 			}
 		}
 	}
-	return "";
+	return "dummy";
 }
 
 void ObjManager::HighlightSelectedObj(CObject *pObj)
