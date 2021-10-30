@@ -7,6 +7,8 @@
 #define RAD_TO_DEG(x) x*-57.2958f
 
 #include <d3d9.h>
+#include <d3d11.h>
+#include <d3d11Shader.h>
 #include <sstream>
 #include <vector>
 #include <windows.h>
@@ -30,5 +32,13 @@
 
 using namespace plugin;
 
+enum eRenderer
+{
+	Render_DirectX9,
+	Render_DirectX11,
+	Render_Unknown
+};
+
+static eRenderer gRenderer = Render_Unknown;
 extern std::ofstream gLog;
 extern CJson gConfig;
