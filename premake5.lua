@@ -4,7 +4,7 @@
 ----------------------------
 -- Environment vars
 PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
-GTASA_DIR = "C:/Work/GTASanAndreas"
+GTASA_DIR = "F:/GTASanAndreas"
 DX9SDK_DIR = os.getenv("DIRECTX9_SDK_DIR")
 
 if (DX9SDK_DIR == nil) then
