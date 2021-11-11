@@ -5,6 +5,7 @@
 #include "../depend/imgui/imgui_impl_dx9.h"
 #include "../depend/imgui/imgui_impl_dx11.h"
 #include "../depend/imgui/imgui_impl_win32.h"
+#include "../depend/imgui/ImGuizmo.h"
 #include <dinput.h>
 
 #define DIMOUSE ((LPDIRECTINPUTDEVICE8)(RsGlobal.ps->diMouse))
@@ -86,8 +87,8 @@ void Hook::RenderFrame(void* ptr)
 		{
 			ImGui_ImplDX11_NewFrame();
 		}
-
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		if (windowCallback != nullptr)
 		{

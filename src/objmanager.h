@@ -54,7 +54,7 @@ public:
     static inline bool m_bDrawAxisLines;
 
     /*  
-    * Currently selected enttiy
+    * Currently selected entity
     * Points to nullptr if none is selected
     */
     static inline CObject* m_pSelected; 

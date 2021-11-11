@@ -11,6 +11,8 @@
 #include <CTxdStore.h>
 #include <CScene.h>
 #include <CSprite.h>
+#include "../depend/imgui/ImGuizmo.h"
+#include <D3dx9math.h>
 
 void Viewport::Init()
 {
@@ -379,7 +381,7 @@ void Viewport::Process()
 	// -------------------------------------------------
 
 	Command<Commands::SET_CHAR_HEADING>(hPlayer, m_fTotalMouse.x);
-	Command<Commands::ATTACH_CAMERA_TO_CHAR>(hPlayer, 0.0, 0.0, PLAYER_Z_OFFSET, 90.0, 180, m_fTotalMouse.y, 0.0, 2);
+	Command<Commands::ATTACH_CAMERA_TO_CHAR>(hPlayer, 0.0, 0.0, PLAYER_Z_OFFSET, 90.0, 0.0, m_fTotalMouse.y, 0.0, 2);
 	pPlayer->SetPosn(pos);
 }
 
@@ -414,6 +416,21 @@ void Viewport::Shutdown()
 	m_bInitialized = false;
 }
 
+static void my_PerspectiveFOV(float fov, float aspect, float _near, float _far, float* mret) {
+    float D2R = 3.1416f / 180.0;
+    float yScale = 1.0 / tan(D2R * fov / 2);
+    float xScale = yScale / aspect;
+    float nearmfar = _near - _far;
+
+    float m[] = {
+        xScale, 0, 0, 0,
+        0, yScale, 0, 0,
+        0, 0, (_far + _near) / nearmfar, -1,
+        0, 0, 2*_far*_near / nearmfar, 0 
+    };      
+    memcpy(mret, m, sizeof(float)*16);
+}
+
 void Viewport::DrawOverlay()
 {
     if (ImGui::IsMouseClicked(1))
@@ -437,11 +454,24 @@ void Viewport::DrawOverlay()
     ImGui::SetNextWindowPos(ImVec2(0.0f, frameHeight));
 	m_fViewportSize = ImVec2(width-menuWidth, height - frameHeight);
     ImGui::SetNextWindowSize(m_fViewportSize);
-	
 
     if (ImGui::Begin("ViewPort", NULL, flags))
     {
         m_bBeingHovered = ImGui::IsWindowHovered();
+
+		// if (ObjManager::m_pSelected)
+		// {
+		// 	ImGuizmo::BeginFrame();
+		// 	ImGuizmo::SetRect(0, 0, screen::GetScreenWidth(), screen::GetScreenHeight());
+			
+		// 	CMatrix projectionMatrix;
+		// 	my_PerspectiveFOV(TheCamera.FindCamFOV(), (float)screen::GetScreenWidth() / (float)screen::GetScreenHeight(), TheCamera.m_pRwCamera->nearPlane, TheCamera.m_pRwCamera->farPlane, (float*)&projectionMatrix);
+		// 	CMatrix objMat = *ObjManager::m_pSelected->GetMatrix();
+		// 	RwMatrix viewMat = TheCamera.m_pRwCamera->viewMatrix;
+
+			
+		// 	ImGuizmo::Manipulate((float*)&viewMat, (float*)&projectionMatrix, ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::WORLD, (float*)&objMat);
+		// }
 		
 		// TODO: do popup menu checks here?
         if (m_bShowContextMenu)
@@ -609,6 +639,7 @@ void Viewport::ProcessSelectedObjectInputs()
 
         if (Utils::TraceEntity(pEntity, pos))
         {
+			ObjManager::m_pSelected = nullptr;
             for (auto &ent : ObjManager::m_pVecEntities)
             {
                 if (ent == pEntity)
@@ -631,56 +662,56 @@ void Viewport::ProcessSelectedObjectInputs()
 		// X, Y, Z axis movement
 		// TODO: Z axis is kinda buggy
 
-		if (!Interface::m_bObjectBrowserShown)
-		{
-			static bool bObjectBeingDragged;
+		//if (!Interface::m_bObjectBrowserShown)
+		//{
+		//	static bool bObjectBeingDragged;
 
-			if (ImGui::IsMouseDown(0) && ObjManager::m_pSelected)
-			{
-				CEntity *pEntity;
-				static CVector pos, off;
-				bool bFound = Utils::TraceEntity(pEntity, pos);
+		//	if (ImGui::IsMouseDown(0) && ObjManager::m_pSelected)
+		//	{
+		//		CEntity *pEntity;
+		//		static CVector pos, off;
+		//		bool bFound = Utils::TraceEntity(pEntity, pos);
 
-				if (bFound)
-				{
-					if (bObjectBeingDragged)
-					{
-						auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-						CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
+		//		if (bFound)
+		//		{
+		//			if (bObjectBeingDragged)
+		//			{
+		//				auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+		//				CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
 
-						if (Interface::m_bAutoSnapToGround)
-						{
-							float offZ = objPos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
-							objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
-							off.z = pos.z - objPos.z;
-						}
+		//				if (Interface::m_bAutoSnapToGround)
+		//				{
+		//					float offZ = objPos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+		//					objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
+		//					off.z = pos.z - objPos.z;
+		//				}
 
-						Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
-					}
-					else
-					{
-						if (pEntity == ObjManager::m_pSelected)
-						{
-							off = pos - pEntity->GetPosition();
-							bObjectBeingDragged = true;
-						}
-					}
-				}
-			}
-			else
-			{
-				// if (bObjectBeingDragged 
-				// && Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
-				// {
-				// 	auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-				// 	CVector pos = ObjManager::m_pSelected->GetPosition();
-				// 	float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
-				// 	pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
-				// 	Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
-				// }
-				bObjectBeingDragged = false;
-			}
-		}
+		//				Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
+		//			}
+		//			else
+		//			{
+		//				if (pEntity == ObjManager::m_pSelected)
+		//				{
+		//					off = pos - pEntity->GetPosition();
+		//					bObjectBeingDragged = true;
+		//				}
+		//			}
+		//		}
+		//	}
+		//	else
+		//	{
+		//		// if (bObjectBeingDragged 
+		//		// && Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
+		//		// {
+		//		// 	auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+		//		// 	CVector pos = ObjManager::m_pSelected->GetPosition();
+		//		// 	float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+		//		// 	pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
+		//		// 	Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
+		//		// }
+		//		bObjectBeingDragged = false;
+		//	}
+		//}
 
 		// -------------------------------------------------
 		// Z axis movement
