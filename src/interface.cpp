@@ -653,18 +653,55 @@ void Interface::DrawInfoMenu()
                         {
                             Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
                         }
-                        if (ImGui::SliderFloat("Rot X##Obj", &rot.x, 0.0f, 360.0f))
+
+                        ImGui::Spacing();
+                        static int rotToggle = 0;
+                        ImGui::Columns(2, NULL, false);
+                        ImGui::RadioButton("Slider", &rotToggle, 0);
+                        ImGui::NextColumn();
+                        ImGui::RadioButton("Input", &rotToggle, 1);
+                        ImGui::Columns(1);
+
+
+                        if (rotToggle == 0)
                         {
-                            data.SetRotation(rot);
+                            if (ImGui::SliderFloat("Rot X##Obj", &rot.x, 0.0f, 360.0f))
+                            {
+                                data.SetRotation(rot);
+                            }
+                            if (ImGui::SliderFloat("Rot Y##Obj", &rot.y, 0.0f, 360.0f))
+                            {
+                                data.SetRotation(rot);
+                            }
+                            if (ImGui::SliderFloat("Rot Z##Obj", &rot.z, 0.0f, 360.0f))
+                            {
+                                data.SetRotation(rot);
+                            }
                         }
-                        if (ImGui::SliderFloat("Rot Y##Obj", &rot.y, 0.0f, 360.0f))
+                        else
                         {
-                            data.SetRotation(rot);
+                            if (ImGui::InputFloat("Rot X##Obj", &rot.x))
+                            {
+                                rot.x = rot.x > 360.0f ? rot.x - 360.0f : rot.x;
+                                rot.x = rot.x < 0.0f ? rot.x + 360.0f : rot.x;
+                                data.SetRotation(rot);
+                            }
+
+                            if (ImGui::InputFloat("Rot Y##Obj", &rot.y))
+                            {
+                                rot.y = rot.y > 360.0f ? rot.y - 360.0f : rot.y;
+                                rot.y = rot.y < 0.0f ? rot.y + 360.0f : rot.y;
+                                data.SetRotation(rot);
+                            }
+
+                            if (ImGui::InputFloat("Rot Z##Obj", &rot.z))
+                            {
+                                rot.z = rot.z > 360.0f ? rot.z - 360.0f : rot.z;
+                                rot.z = rot.z < 0.0f ? rot.z + 360.0f : rot.z;
+                                data.SetRotation(rot);
+                            }
                         }
-                        if (ImGui::SliderFloat("Rot Z##Obj", &rot.z, 0.0f, 360.0f))
-                        {
-                            data.SetRotation(rot);
-                        }
+                        
                         ImGui::Spacing();
                     }
 
