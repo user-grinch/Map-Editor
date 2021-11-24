@@ -15,6 +15,7 @@ void Editor::Init()
 
 Editor::Editor()
 {
+	ImGui::CreateContext();
 	ApplyStyle();
 	pCallbackFunc = std::bind(&DrawWindow);
 

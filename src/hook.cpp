@@ -13,9 +13,7 @@ LRESULT Hook::WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	if (ImGui::GetIO().WantTextInput)
 	{
-#ifdef GTASA
 		Call<0x53F1E0>(); // CPad::ClearKeyboardHistory
-#endif
 		return 1;
 	}
 
@@ -108,11 +106,8 @@ void Hook::RenderFrame(void* ptr)
 		bInit = true;
 		ImGui_ImplWin32_Init(RsGlobal.ps->window);
 
-#ifdef GTASA
 		// shift trigger fix
 		patch::Nop(0x00531155, 5);
-#endif
-
 		if (gRenderer == Render_DirectX9)
 		{
 			ImGui_ImplDX9_Init(reinterpret_cast<IDirect3DDevice9*>(ptr));
@@ -170,11 +165,7 @@ void Hook::ShowMouse(bool state)
 			else
 			{
 				bMouseDisabled = false;
-#ifdef GTA3
-				pad->m_bDisablePlayerControls = false;
-#else //GTAVC & GTASA
 				pad->DisablePlayerControls = false;
-#endif
 			}
 		}
 	}
@@ -198,11 +189,7 @@ void Hook::ShowMouse(bool state)
 
 		CPad::NewMouseControllerState.X = 0;
 		CPad::NewMouseControllerState.Y = 0;
-#ifdef GTA3
-		CPad::GetPad(0)->ClearMouseHistory();
-#else // GTAVC & GTASA
 		CPad::ClearMouseHistory();
-#endif
 		CPad::UpdatePads();
 		m_bMouseVisibility = state;
 	}
