@@ -5,10 +5,7 @@
 #include "../depend/imgui/imgui_impl_dx9.h"
 #include "../depend/imgui/imgui_impl_dx11.h"
 #include "../depend/imgui/imgui_impl_win32.h"
-#include "../depend/imgui/ImGuizmo.h"
 #include <dinput.h>
-
-#define DIMOUSE ((LPDIRECTINPUTDEVICE8)(RsGlobal.ps->diMouse))
 
 LRESULT Hook::WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -36,7 +33,7 @@ void Hook::RenderFrame(void* ptr)
 {
 	if (!ImGui::GetCurrentContext())
 	{
-		return;
+		ImGui::CreateContext();
 	}
 
 	ImGuiIO& io = ImGui::GetIO();
@@ -44,15 +41,14 @@ void Hook::RenderFrame(void* ptr)
 
 	if (bInit)
 	{
-		ShowMouse(m_bShowMouse);
+		ShowMouse(m_bShowMouse);	
 
-		// handle window scaling here
+		// Scale the menu if game resolution changed
 		static ImVec2 fScreenSize = ImVec2(-1, -1);
 		ImVec2 size(screen::GetScreenWidth(), screen::GetScreenHeight());
 		if (fScreenSize.x != size.x && fScreenSize.y != size.y)
 		{
 			int fontSize = static_cast<int>(size.y / 54.85f); // manually tested
-
 			io.FontDefault = io.Fonts->AddFontFromFileTTF("C:/Windows/Fonts/trebucbd.ttf", fontSize);
 			io.Fonts->Build();
 
@@ -69,11 +65,11 @@ void Hook::RenderFrame(void* ptr)
 			float scaleX = size.x / 1366.0f;
 			float scaleY = size.y / 768.0f;
 
-			style->FramePadding = ImVec2(5 * scaleX, 3 * scaleY);
+			style->FramePadding = ImVec2(5 * scaleX, 5 * scaleY);
 			style->ItemSpacing = ImVec2(8 * scaleX, 4 * scaleY);
 			style->ScrollbarSize = 12 * scaleX;
 			style->IndentSpacing = 20 * scaleX;
-			style->ItemInnerSpacing = ImVec2(4 * scaleX, 4 * scaleY);
+			style->ItemInnerSpacing = ImVec2(5 * scaleX, 5 * scaleY);
 
 			fScreenSize = size;
 		}
@@ -87,12 +83,12 @@ void Hook::RenderFrame(void* ptr)
 		{
 			ImGui_ImplDX11_NewFrame();
 		}
-		ImGui::NewFrame();
-		ImGuizmo::BeginFrame();
 
-		if (windowCallback != nullptr)
+		ImGui::NewFrame();
+
+		if (pCallbackFunc != nullptr)
 		{
-			windowCallback();
+			pCallbackFunc();
 		}
 
 		ImGui::EndFrame();
@@ -110,7 +106,6 @@ void Hook::RenderFrame(void* ptr)
 	else
 	{
 		bInit = true;
-		ImGuiStyle& style = ImGui::GetStyle();
 		ImGui_ImplWin32_Init(RsGlobal.ps->window);
 
 #ifdef GTASA
@@ -133,12 +128,10 @@ void Hook::RenderFrame(void* ptr)
 		}
 
 		ImGui_ImplWin32_EnableDpiAwareness();
-
+		
 		io.IniFilename = nullptr;
 		io.LogFilename = nullptr;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-
-		style.WindowTitleAlign = ImVec2(0.5, 0.5);
 		oWndProc = (WNDPROC)SetWindowLongPtr(RsGlobal.ps->window, GWL_WNDPROC, (LRESULT)WndProc);
 	}
 }
@@ -159,37 +152,20 @@ void Hook::ShowMouse(bool state)
 {
 	// Disable player controls for controllers
 	bool bMouseDisabled = false;
-	bool isController;
+	bool isController = patch::Get<BYTE>(0xBA6818);
 
-#ifdef GTA3
-	isController =  !patch::Get<BYTE>(0x5F03D8);
-#elif GTAVC
-	isController =  patch::Get<BYTE>(0x86968B);
-#else // GTASA
-	isController =  patch::Get<BYTE>(0xBA6818);
-#endif
-
-
-	if (isController && (m_bShowMouse || bMouseDisabled))
+	if (isController && (state || bMouseDisabled))
 	{
 
-#ifdef GTASA
 		CPlayerPed *player = FindPlayerPed();
 		CPad *pad = player ? player->GetPadFromPlayer() : NULL;
-#else
-		CPad *pad = CPad::GetPad(0);
-#endif
 
 		if (pad)
 		{
-			if (m_bShowMouse)
+			if (state)
 			{
 				bMouseDisabled = true;
-#ifdef GTA3
-				pad->m_bDisablePlayerControls = true;
-#else //GTAVC & GTASA
 				pad->DisablePlayerControls = true;
-#endif
 			}
 			else
 			{
@@ -203,30 +179,22 @@ void Hook::ShowMouse(bool state)
 		}
 	}
 
-	if (m_bMouseVisibility != m_bShowMouse)
+	if (m_bMouseVisibility != state)
 	{
 		ImGui::GetIO().MouseDrawCursor = state;
 
-#ifdef GTASA
-		Hook::ApplyMouseFix(); // Reapply the patches
-#else
-		if (m_bShowMouse)
+		if (state)
 		{
 			
-			patch::SetUChar(BY_GAME(0, 0x6020A0, 0x580D20), 0xC3); // psSetMousePos
-			patch::Nop(BY_GAME(0, 0x4AB6CA, 0x49272F), 5); // don't call CPad::UpdateMouse()
+			patch::SetUChar(0x6194A0, 0xC3); // psSetMousePos
+			patch::Nop(0x541DD7, 5); // don't call CPad::UpdateMouse()
 		}
 		else
 		{
 			
-			patch::SetUChar(BY_GAME(0, 0x6020A0, 0x580D20), 0x53);
-#ifdef GTAVC
-			patch::SetRaw(0x4AB6CA, (char*)"\xE8\x51\x21\x00\x00", 5);
-#else // GTA3
-			patch::SetRaw(0x49272F, (char*)"\xE8\x6C\xF5\xFF\xFF", 5);
-#endif
+			patch::SetUChar(0x6194A0, 0xE9);
+			patch::SetRaw(0x541DD7, (char*)"\xE8\xE4\xD5\xFF\xFF", 5);
 		}
-#endif
 
 		CPad::NewMouseControllerState.X = 0;
 		CPad::NewMouseControllerState.Y = 0;
@@ -236,13 +204,12 @@ void Hook::ShowMouse(bool state)
 		CPad::ClearMouseHistory();
 #endif
 		CPad::UpdatePads();
-		m_bMouseVisibility = m_bShowMouse;
+		m_bMouseVisibility = state;
 	}
 }
 
 Hook::Hook()
 {
-	ImGui::CreateContext();
 
 	// Nvidia Overlay crash fix
 	if (init(kiero::RenderType::D3D9) == kiero::Status::Success)
@@ -270,82 +237,3 @@ Hook::~Hook()
 	ImGui::DestroyContext();
 	kiero::shutdown();
 }
-
-#ifdef GTASA
-struct Mouse
-{
-	unsigned int x, y;
-	unsigned int wheelDelta;
-	unsigned char buttons[8];
-};
-
-struct MouseInfo
-{
-	int x, y, wheelDelta;
-} mouseInfo;
-
-static BOOL __stdcall _SetCursorPos(int X, int Y)
-{
-	if (Hook::m_bShowMouse || GetActiveWindow() != RsGlobal.ps->window)
-	{
-		return 1;
-	}
-
-	mouseInfo.x = X;
-	mouseInfo.y = Y;
-
-	return SetCursorPos(X, Y);
-}
-
-static LRESULT __stdcall _DispatchMessage(MSG* lpMsg)
-{
-	if (lpMsg->message == WM_MOUSEWHEEL && !Hook::m_bShowMouse)
-	{
-		mouseInfo.wheelDelta += GET_WHEEL_DELTA_WPARAM(lpMsg->wParam);
-	}
-
-	return DispatchMessageA(lpMsg);
-}
-
-static int _cdecl _GetMouseState(Mouse* pMouse)
-{
-	if (Hook::m_bShowMouse || !RsGlobal.ps->diMouse)
-	{
-		DIMOUSE->Unacquire();
-		return -1;
-	}
-	
-	if (DIMOUSE->GetDeviceState(sizeof(Mouse), pMouse) < 0)
-	{
-		if (DIMOUSE->Acquire() == DIERR_NOTINITIALIZED)
-		{
-			while (DIMOUSE->Acquire() == DIERR_NOTINITIALIZED);
-		}
-	}
-
-	pMouse->wheelDelta = mouseInfo.wheelDelta;
-	mouseInfo.wheelDelta = 0;
-	pMouse->buttons[0] = (GetAsyncKeyState(1) >> 8);
-	pMouse->buttons[1] = (GetAsyncKeyState(2) >> 8);
-	pMouse->buttons[2] = (GetAsyncKeyState(4) >> 8);
-	pMouse->buttons[3] = (GetAsyncKeyState(5) >> 8);
-	pMouse->buttons[4] = (GetAsyncKeyState(6) >> 8);
-	
-	return 0;
-}
-
-void Hook::ApplyMouseFix()
-{
-	patch::ReplaceFunctionCall(0x53F417, _GetMouseState);
-	patch::Nop(0x57C59B, 1);
-	patch::ReplaceFunctionCall(0x57C59C, _SetCursorPos);
-	patch::Nop(0x81E5D4, 1);
-	patch::ReplaceFunctionCall(0x81E5D5, _SetCursorPos);
-	patch::Nop(0x74542D, 1);
-	patch::ReplaceFunctionCall(0x74542E, _SetCursorPos);
-	patch::Nop(0x748A7C, 1);
-	patch::ReplaceFunctionCall(0x748A7D, _DispatchMessage);
-	patch::SetChar(0x746A08, 32); // diMouseOffset
-	patch::SetChar(0x746A58, 32); // diDeviceoffset
-}
-#endif

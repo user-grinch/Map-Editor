@@ -10,14 +10,13 @@
 
 void Editor::Init()
 {
-	ApplyMouseFix();
 	ObjManager::Init();
 }
 
 Editor::Editor()
 {
 	ApplyStyle();
-	windowCallback = std::bind(&DrawWindow);
+	pCallbackFunc = std::bind(&DrawWindow);
 
 	// Load config data
 	Interface::m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true); 

@@ -491,22 +491,6 @@ void Interface::DrawMainMenuBar()
             {
                 gConfig.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
             }
-            if (ImGui::MenuItem("Axis lines", NULL, &ObjManager::m_bDrawAxisLines))
-            {
-                gConfig.SetValue("editor.drawAxisLines", ObjManager::m_bDrawAxisLines);
-            }
-            if (ImGui::MenuItem("Bounding box", NULL, &ObjManager::m_bDrawBoundingBox))
-            {
-                gConfig.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
-            }
-            if (ImGui::MenuItem("Hover tooltip", NULL, &Viewport::m_bShowHoverMenu))
-            {
-                gConfig.SetValue("editor.showHoverMenu", Viewport::m_bShowHoverMenu);
-            }
-            if (ImGui::MenuItem("Info panel", NULL, &m_bShowInfoMenu))
-            {
-                gConfig.SetValue("editor.showInfoMenu", m_bShowInfoMenu);
-            }
             if (ImGui::MenuItem("No pedstrain", NULL, &bNoPeds))
             {
                 if (bNoPeds)
@@ -528,6 +512,26 @@ void Interface::DrawMainMenuBar()
                 {
                     patch::SetFloat(0x8A5B20, 1.0f);
                 }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View"))
+        {
+            if (ImGui::MenuItem("Axis lines", NULL, &ObjManager::m_bDrawAxisLines))
+            {
+                gConfig.SetValue("editor.drawAxisLines", ObjManager::m_bDrawAxisLines);
+            }
+            if (ImGui::MenuItem("Bounding box", NULL, &ObjManager::m_bDrawBoundingBox))
+            {
+                gConfig.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
+            }
+            if (ImGui::MenuItem("Hover tooltip", NULL, &Viewport::m_bShowHoverMenu))
+            {
+                gConfig.SetValue("editor.showHoverMenu", Viewport::m_bShowHoverMenu);
+            }
+            if (ImGui::MenuItem("Info panel", NULL, &m_bShowInfoMenu))
+            {
+                gConfig.SetValue("editor.showInfoMenu", m_bShowInfoMenu);
             }
             ImGui::EndMenu();
         }

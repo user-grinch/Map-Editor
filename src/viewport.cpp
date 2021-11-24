@@ -662,56 +662,56 @@ void Viewport::ProcessSelectedObjectInputs()
 		// X, Y, Z axis movement
 		// TODO: Z axis is kinda buggy
 
-		//if (!Interface::m_bObjectBrowserShown)
-		//{
-		//	static bool bObjectBeingDragged;
+		if (!Interface::m_bObjectBrowserShown)
+		{
+			static bool bObjectBeingDragged;
 
-		//	if (ImGui::IsMouseDown(0) && ObjManager::m_pSelected)
-		//	{
-		//		CEntity *pEntity;
-		//		static CVector pos, off;
-		//		bool bFound = Utils::TraceEntity(pEntity, pos);
+			if (ImGui::IsMouseDown(0) && ObjManager::m_pSelected)
+			{
+				CEntity *pEntity;
+				static CVector pos, off;
+				bool bFound = Utils::TraceEntity(pEntity, pos);
 
-		//		if (bFound)
-		//		{
-		//			if (bObjectBeingDragged)
-		//			{
-		//				auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-		//				CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
+				if (bFound)
+				{
+					if (bObjectBeingDragged)
+					{
+						auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+						CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
 
-		//				if (Interface::m_bAutoSnapToGround)
-		//				{
-		//					float offZ = objPos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
-		//					objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
-		//					off.z = pos.z - objPos.z;
-		//				}
+						if (Interface::m_bAutoSnapToGround)
+						{
+							float offZ = objPos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+							objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
+							off.z = pos.z - objPos.z;
+						}
 
-		//				Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
-		//			}
-		//			else
-		//			{
-		//				if (pEntity == ObjManager::m_pSelected)
-		//				{
-		//					off = pos - pEntity->GetPosition();
-		//					bObjectBeingDragged = true;
-		//				}
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		// if (bObjectBeingDragged 
-		//		// && Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
-		//		// {
-		//		// 	auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-		//		// 	CVector pos = ObjManager::m_pSelected->GetPosition();
-		//		// 	float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
-		//		// 	pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
-		//		// 	Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
-		//		// }
-		//		bObjectBeingDragged = false;
-		//	}
-		//}
+						Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
+					}
+					else
+					{
+						if (pEntity == ObjManager::m_pSelected)
+						{
+							off = pos - pEntity->GetPosition();
+							bObjectBeingDragged = true;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (bObjectBeingDragged 
+				&& Interface::m_bAutoSnapToGround && ObjManager::m_pSelected)
+				{
+					auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+					CVector pos = ObjManager::m_pSelected->GetPosition();
+					float offZ = pos.z - ObjManager::GetBoundingBoxGroundZ(ObjManager::m_pSelected);
+					pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
+					Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
+				}
+				bObjectBeingDragged = false;
+			}
+		}
 
 		// -------------------------------------------------
 		// Z axis movement

@@ -22,6 +22,22 @@ void EditorThread(void* param)
 	gLog << "Starting...\nVersion: "  EDITOR_VERSION  "\nAuthor: Grinch_\nDiscord: " DISCORD_INVITE "\nMore Info: "
 		GITHUB_LINK "\n" << std::endl;
 
+	/*
+		Need SilentPatch since all gta games have issues with mouse input
+		Implementing mouse fix is a headache anyway
+	*/
+	if (!GetModuleHandle("SilentPatchSA.asi"))
+	{
+		gLog << "Error: SilentPatch not found. Please install it from here https://gtaforums.com/topic/669045-silentpatch/" << std::endl;
+		int msgID = MessageBox(RsGlobal.ps->window, "SilentPatch not found. Do you want to install Silent Patch? (Game restart required)", "CheatMenu", MB_OKCANCEL | MB_DEFBUTTON1);
+
+		if (msgID == IDOK)
+		{
+			ShellExecute(nullptr, "open", "https://gtaforums.com/topic/669045-silentpatch/", nullptr, nullptr, SW_SHOWNORMAL);
+		};
+		return;
+	}
+
 	Editor menu;
 	while (true)
 	{
