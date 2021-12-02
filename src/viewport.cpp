@@ -194,7 +194,34 @@ void Viewport::DrawHoverMenu()
     if (Utils::TraceEntity(m_HoveredEntity, worldPos))
     {
         ImGui::BeginTooltip();
-        Interface::PrintObjInfo(m_HoveredEntity);
+        int model = m_HoveredEntity->m_nModelIndex;
+		if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT
+		|| m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING)
+		{
+			static int bmodel = 0;
+			static std::string name = "";
+
+			// lets not go over 20000 models each frame
+			if (bmodel != model)
+			{
+				name = ObjManager::FindNameFromModel(model);
+				bmodel = model;
+			}
+			
+			ImGui::Text("Name: %s", name.c_str()); 
+		}
+		std::string type = "";
+
+		if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT)
+		{
+			type = "Dynamic";
+		}
+		if (m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING)
+		{
+			type = "Static";
+		}
+
+		ImGui::Text("Model: %d (%s)", model, type.c_str());
         ImGui::EndTooltip();
     }
 }

@@ -57,10 +57,10 @@ void Interface::ImportMenu()
     if (std::filesystem::exists(path))
     {
         ImGui::Spacing();
-        ImGui::Text("Notes,");
-        ImGui::TextWrapped("Files are imported from '(game dir)/MapEditor' directory");
-        ImGui::TextWrapped("Imported objects will be merged with current ones!");
-        ImGui::TextWrapped("Use a limit adjuster if you're going to load a lot of objects!");
+        ImGui::Text("Info,");
+        ImGui::TextWrapped("- Place ipl files in 'MapEditor' directory");
+        ImGui::TextWrapped("- Use limit adjuster if you're gonna load a lot of objects!");
+        ImGui::Spacing();
         ImGui::TextWrapped("You game may freeze while loading!");
         ImGui::Dummy(ImVec2(0, 20));
         static std::string selectedFileName = "";
@@ -71,7 +71,7 @@ void Interface::ImportMenu()
             m_bShowPopup = false;
         }
         ImGui::SameLine();
-        if (ImGui::Button("Clear objects", Utils::GetSize(2)))
+        if (ImGui::Button("Clear placed objects", Utils::GetSize(2)))
         {
             for (auto &pObj : ObjManager::m_pVecEntities)
             {
@@ -179,7 +179,7 @@ void Interface::QuickObjectCreateMenu()
 {
     static int modelId = DEFAULT_MODEL_ID;
     static std::string modelName = ObjManager::FindNameFromModel(modelId);
-
+    
     ImGui::Text("Name: %s", modelName.c_str());
     if (ImGui::InputInt("Model", &modelId))
     {
@@ -513,6 +513,34 @@ void Interface::DrawMainMenuBar()
                     patch::SetFloat(0x8A5B20, 1.0f);
                 }
             }
+            if (ImGui::BeginMenu("Weather"))
+            {
+                if (ImGui::MenuItem("Foggy"))
+                {
+                    Call<0x438F80>();
+                }
+                if (ImGui::MenuItem("Overcast"))
+                {
+                    Call<0x438F60>();
+                }
+                if (ImGui::MenuItem("Rainy"))
+                {
+                    Call<0x438F70>();
+                }
+                if (ImGui::MenuItem("Sandstorm"))
+                {
+                    Call<0x439590>();
+                }
+                if (ImGui::MenuItem("Thunderstorm"))
+                {
+                    Call<0x439570>();
+                }
+                if (ImGui::MenuItem("Very sunny"))
+                {
+                    Call<0x438F50>();
+                }
+                ImGui::EndMenu();
+            }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("View"))
@@ -562,40 +590,6 @@ void Interface::DrawMainMenuBar()
     }
 }
 
-void Interface::PrintObjInfo(CEntity *pEntity)
-{
-	int model = pEntity->m_nModelIndex;
-	ImGui::Text("Model: %d", model);
-
-	switch(pEntity->m_nType)
-	{
-		case ENTITY_TYPE_OBJECT:
-			ImGui::Text("Type: Object");
-			break;
-		case ENTITY_TYPE_BUILDING:
-			ImGui::Text("Type: Building");
-			break;
-		default:
-			ImGui::Text("Type: Unknown");
-	}
-
-	if (pEntity->m_nType == ENTITY_TYPE_OBJECT
-	|| pEntity->m_nType == ENTITY_TYPE_BUILDING)
-	{
-		static int bmodel = 0;
-		static std::string name = "";
-
-		// lets not go over 20000 models each frame
-		if (bmodel != model)
-		{
-			name = ObjManager::FindNameFromModel(model);
-			bmodel = model;
-		}
-
-		ImGui::Text("Name: %s", name.c_str()); 
-	}
-}
-
 void Interface::DrawInfoMenu()
 {
     if (!m_bShowInfoMenu)
@@ -632,16 +626,45 @@ void Interface::DrawInfoMenu()
                         ImGui::Text("Object selection");
                         ImGui::Separator();
                         ImGui::Spacing();
-                        if (m_bAutoSnapToGround)
-                        {
-                            ImGui::Text("Auto snap is enabled.");
-                        }
-                        ImGui::Spacing();
 
                         int hObj = CPools::GetObjectRef(ObjManager::m_pSelected);
                         CVector *objPos = &ObjManager::m_pSelected->GetPosition();
                         auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-                        PrintObjInfo(ObjManager::m_pSelected);
+                        int model = ObjManager::m_pSelected->m_nModelIndex;
+                        if (ObjManager::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
+                        || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING)
+                        {
+                            static int bmodel = 0;
+                            static std::string name = "";
+
+                            // lets not go over 20000 models each frame
+                            if (bmodel != model)
+                            {
+                                name = ObjManager::FindNameFromModel(model);
+                                bmodel = model;
+                            }
+
+                            ImGui::Spacing();
+	                        ImGui::SameLine();
+                            ImGui::Text("Name: %s", name.c_str()); 
+                        }
+
+                        ImGui::Columns(2, NULL, false);
+                        ImGui::Text("Model: %d", model);
+                        ImGui::NextColumn();
+                        switch(ObjManager::m_pSelected->m_nType)
+                        {
+                            case ENTITY_TYPE_OBJECT:
+                                ImGui::Text("Type: Dynamic");
+                                break;
+                            case ENTITY_TYPE_BUILDING:
+                                ImGui::Text("Type: Static");
+                                break;
+                            default:
+                                ImGui::Text("Type: Unknown");
+                        }
+                        ImGui::Columns(1);
+
                         ImGui::Spacing();
                         CVector rot = data.GetRotation();
 
@@ -734,46 +757,6 @@ void Interface::DrawInfoMenu()
                     }
                     ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10);
                     ImGui::Spacing();
-
-                    // ---------------------------------------------------
-                    // Weather
-                    ImGui::Text("Weather");
-                    ImGui::Separator();
-                    
-                    if (ImGui::Button("Foggy", Utils::GetSize(3)))
-                    {
-                        Call<0x438F80>();
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Overcast", Utils::GetSize(3)))
-                    {
-                        Call<0x438F60>();
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Rainy", Utils::GetSize(3)))
-                    {
-                        Call<0x438F70>();
-                    }
-
-                    if (ImGui::Button("Sandstorm", Utils::GetSize(3)))
-                    {
-                        Call<0x439590>();
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Thunderstorm", Utils::GetSize(3)))
-                    {
-                        Call<0x439570>();
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("Very sunny", Utils::GetSize(3)))
-                    {
-                        Call<0x438F50>();
-                    }
-                    ImGui::Spacing();
                     
                     // ---------------------------------------------------
                     // Time
@@ -863,6 +846,10 @@ void Interface::DrawInfoMenu()
                     if (ObjManager::m_pVecEntities.size() < 500 || bShowAnyway)
                     {
                         filter.Draw("Search");
+                        if (ImGui::IsItemActive())
+                        {
+                            m_bIsInputLocked = true;
+                        }
                         ImGui::Spacing();
                         if (ImGui::BeginChild("Objects child"))
                         {
@@ -880,7 +867,20 @@ void Interface::DrawInfoMenu()
 
                                 if (filter.PassFilter(buf) && ImGui::MenuItem(buf))
                                 {
-                                    Viewport::SetCameraPosn(pObj->GetPosition());
+                                    // Setting the camera pos to bounding box
+                                    CMatrix *matrix = pObj->GetMatrix();
+                                    CColModel *pColModel = pObj->GetColModel();
+                                    CVector min = pColModel->m_boundBox.m_vecMin;
+                                    CVector max = pColModel->m_boundBox.m_vecMax;
+
+                                    CVector workVec = min;
+                                    workVec.x = max.x;
+                                    workVec.z = max.z;
+                                    CVector vec = *matrix * workVec;
+
+                                    // TODO: Rotate the camera to face the object
+                                    
+                                    Viewport::SetCameraPosn(vec);
                                     ObjManager::m_pSelected = pObj;
                                 }
                             }

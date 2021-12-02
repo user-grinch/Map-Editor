@@ -37,7 +37,6 @@ public:
     static void DrawPopupMenu();
     static void ImportMenu();
     static void ExportMenu();
-    static void PrintObjInfo(CEntity *pEntity);
     
     // Custom popup menu codes
     static void QuickObjectCreateMenu();

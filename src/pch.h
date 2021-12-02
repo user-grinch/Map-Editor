@@ -5,6 +5,7 @@
 #define GITHUB_LINK "https://github.com/user-grinch/Map-Editor"
 #define HRESULT int
 #define RAD_TO_DEG(x) x*-57.2958f
+#define IMGUI_DEFINE_MATH_OPERATORS
 
 #include <d3d9.h>
 #include <d3d11.h>

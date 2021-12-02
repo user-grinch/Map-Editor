@@ -22,10 +22,10 @@ float ObjManager::GetBoundingBoxGroundZ(CObject *pObj)
 	}
 	CMatrix *matrix = pObj->GetMatrix();
 	CColModel *pColModel = pObj->GetColModel();
-	auto min = pColModel->m_boundBox.m_vecMin;
-	auto max = pColModel->m_boundBox.m_vecMax;
+	CVector min = pColModel->m_boundBox.m_vecMin;
+	CVector max = pColModel->m_boundBox.m_vecMax;
 
-	auto workVec = min;
+	CVector workVec = min;
 	workVec.x = max.x;
 	workVec.y = max.y;
 	CVector ground = *matrix * workVec;
@@ -43,10 +43,10 @@ void ObjManager::DrawColModel(const CMatrix& matrix, const CColModel& colModel)
 	
 	if (m_bDrawBoundingBox)
 	{
-		auto min = colModel.m_boundBox.m_vecMin;
-		auto max = colModel.m_boundBox.m_vecMax;
+		CVector min = colModel.m_boundBox.m_vecMin;
+		CVector max = colModel.m_boundBox.m_vecMax;
 
-		auto workVec = min;
+		CVector workVec = min;
 		CVector v1 = matrix * workVec;
 
 		workVec.z = max.z;
