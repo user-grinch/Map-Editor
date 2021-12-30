@@ -359,6 +359,7 @@ void Viewport::Process()
 
 		float angle;
 		Command<Commands::GET_CHAR_HEADING>(hPlayer, &angle);
+		angle += 5.0f; // fix camera being slightly off
 		pos.x += speed * cos(angle * 3.14159f / 180.0f);
 		pos.y += speed * sin(angle * 3.14159f / 180.0f);
 		pos.z += speed * 2 * sin(m_fTotalMouse.y / 3 * 3.14159f / 180.0f);
