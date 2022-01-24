@@ -11,7 +11,7 @@ private:
 
 public:
     Hotkey(int key1, int key2)
-    : m_key1(key1), m_key2(key2)
+        : m_key1(key1), m_key2(key2)
     {}
 
     // Draws ui to change the hotkeys from frontend

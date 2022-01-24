@@ -12,7 +12,7 @@ void FileMgr::ImportIPL(std::string fileName)
     std::string fullPath = PLUGIN_PATH((char*)"MapEditor/") + fileName;
     file.open(fullPath.c_str(), std::ios::in);
     std::string line;
-    
+
     int model, interior, unk;
     char modelName[32];
     CVector pos;
@@ -20,13 +20,13 @@ void FileMgr::ImportIPL(std::string fileName)
 
     while (getline(file, line))
     {
-        for(char& c : line ) 
+        for(char& c : line )
         {
             if( c == ',' ) c = ' ' ;
         }
 
-        if (sscanf(line.c_str(), "%d %s %d %f %f %f %f %f %f %f %d", &model, modelName, &interior, 
-                    &pos.x, &pos.y, &pos.z, &rx, &ry, &rz, &rw, &unk) == 11)
+        if (sscanf(line.c_str(), "%d %s %d %f %f %f %f %f %f %f %d", &model, modelName, &interior,
+                   &pos.x, &pos.y, &pos.z, &rx, &ry, &rz, &rw, &unk) == 11)
         {
             int hObj;
             Command<Commands::REQUEST_MODEL>(model);
@@ -40,7 +40,7 @@ void FileMgr::ImportIPL(std::string fileName)
             // Store rotation
             CVector rot;
             CallMethod<0x59A840, int>((int)pObj->GetMatrix(), &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
-            
+
             rot.x = RAD_TO_DEG(rot.x);
             rot.y = RAD_TO_DEG(rot.y);
             rot.z = RAD_TO_DEG(rot.z);
@@ -77,17 +77,17 @@ void FileMgr::ExportIPL(const char* fileName)
 
         // These don't work
         // Command<Commands::GET_OBJECT_QUATERNION>(...)
-    
+
         // if (pData->m_pRwObject)
         // {
         //     RwMatrix modelingMatrix = reinterpret_cast<RwFrame*>(pData->m_pRwObject->parent)->modelling;
         //     quat.Set(modelingMatrix);
         // }
-       
-        file << std::format("{}, {}, 0, {}, {}, {},  {}, {}, {}, {}, -1", 
-                        model, ObjManager::FindNameFromModel(model), pos.x, pos.y, pos.z, 
-                        quat.x,  quat.y,  quat.z, quat.w)
-                        << std::endl;        
+
+        file << std::format("{}, {}, 0, {}, {}, {},  {}, {}, {}, {}, -1",
+                            model, ObjManager::FindNameFromModel(model), pos.x, pos.y, pos.z,
+                            quat.x,  quat.y,  quat.z, quat.w)
+             << std::endl;
     }
     file << "end" << std::endl;
     file.close();

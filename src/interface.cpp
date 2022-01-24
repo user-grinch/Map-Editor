@@ -38,7 +38,7 @@ void Interface::ProcessContextMenu()
         {
             ImGui::Text(m_contextMenu.key.c_str());
             ImGui::Separator();
-            
+
             m_contextMenu.function(m_contextMenu.rootKey, m_contextMenu.key, m_contextMenu.value);
 
             if (ImGui::MenuItem("Close"))
@@ -82,22 +82,22 @@ void Interface::ImportMenu()
             CHud::SetHelpMessage("Current objects cleared", false, false, false);
         }
         ImGui::Spacing();
-        
+
         if(ImGui::BeginChild("ImportMenu"))
-        { 
+        {
             for (const auto & entry : std::filesystem::directory_iterator(path))
             {
                 if (entry.path().filename().string().ends_with(".ipl"))
                 {
                     std::string fileName = entry.path().filename().string();
-                    
+
                     if (ImGui::MenuItem(fileName.c_str(), NULL, selectedFileName == fileName))
                     {
                         selectedFileName = fileName;
                     }
                 }
             }
-            
+
             ImGui::EndChild();
         }
     }
@@ -138,21 +138,21 @@ void Interface::WelcomeMenu()
 {
     ImGui::Spacing();
     if (ImGui::Button("Discord", ImVec2(Utils::GetSize(3))))
-	{
-		ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
-	}
+    {
+        ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
+    }
     ImGui::SameLine();
     if (ImGui::Button("Controls", Utils::GetSize(3)))
-	{
+    {
         m_popupTitle = "Controls";
         m_pPopupFunc = EditorControls;
-	}
+    }
     ImGui::SameLine();
-	if (ImGui::Button("About page", Utils::GetSize(3)))
-	{
+    if (ImGui::Button("About page", Utils::GetSize(3)))
+    {
         m_popupTitle = "About";
         m_pPopupFunc = AboutEditorMenu;
-	}
+    }
     ImGui::Dummy(ImVec2(0, 20));
     if (ImGui::BeginChild("WelcomeScreen"))
     {
@@ -179,7 +179,7 @@ void Interface::QuickObjectCreateMenu()
 {
     static int modelId = DEFAULT_MODEL_ID;
     static std::string modelName = ObjManager::FindNameFromModel(modelId);
-    
+
     ImGui::Text("Name: %s", modelName.c_str());
     if (ImGui::InputInt("Model", &modelId))
     {
@@ -193,14 +193,14 @@ void Interface::QuickObjectCreateMenu()
     ImGui::Spacing();
     if (ImGui::Button("Create", Utils::GetSize(2)))
     {
-        create_object:
+create_object:
         int hObj;
         Command<Commands::REQUEST_MODEL>(modelId);
         Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(modelId, Viewport::m_vecWorldPos.x, 
-        Viewport::m_vecWorldPos.y, Viewport::m_vecWorldPos.z, &hObj);
+        Command<Commands::CREATE_OBJECT>(modelId, Viewport::m_vecWorldPos.x,
+                                         Viewport::m_vecWorldPos.y, Viewport::m_vecWorldPos.z, &hObj);
         Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(modelId);
-        
+
         CObject *pEntity = CPools::GetObject(hObj);
         auto &data = ObjManager::m_objData.Get(pEntity);
         data.m_modelName = modelName;
@@ -233,149 +233,149 @@ void Interface::EditorControls()
         {
             // ---------------------------------------------------------------
             // Camera Section
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Camera");
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("-");
 
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Movement");
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("W A S D");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Speed multiplier");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("LShift");
-            
+
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Rotation (view mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("Mouse");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Zoom (view mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("Mouse wheel");
 
             // -------------------------------------------------------------
             // Object Section
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("");
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Object controls");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("-");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Move up/ down (edit mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("Mouse wheel");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Rotate left/right (edit mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("LCtrl + Mouse wheel");
 
-                // -------------------------------------------------------------
+            // -------------------------------------------------------------
             // Browser Section
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("");
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Browser controls");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("-");
-            
+
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Rotate (view mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("Mouse");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Zoom (view mode)");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("Mouse wheel");
 
             // -------------------------------------------------------------
-            // Toggles 
+            // Toggles
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("");
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Toggles");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("-");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Open/Close Map Editor");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(editorOpenKey.GetNameString().c_str());
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Switch modes");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(viewportSwitchKey.GetNameString().c_str());
 
             // -------------------------------------------------------------
             // Shortcuts
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("");
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Shortcuts");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text("-");
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("New object");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(newObjKey.GetNameString().c_str());
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Copy object");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(copyKey.GetNameString().c_str());
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Paste object");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(pasteKey.GetNameString().c_str());
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Delete object");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(deleteKey.GetNameString().c_str());
 
             ImGui::TableNextRow();
-            ImGui::TableNextColumn(); 
+            ImGui::TableNextColumn();
             ImGui::Text("Snap object");
-            ImGui::TableNextColumn();  
+            ImGui::TableNextColumn();
             ImGui::Text(snapKey.GetNameString().c_str());
 
             // -------------------------------------------------------------
@@ -388,14 +388,14 @@ void Interface::EditorControls()
 void Interface::AboutEditorMenu()
 {
     if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
-	{
-		ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
-	}
+    {
+        ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
+    }
     ImGui::SameLine();
-	if (ImGui::Button("Check update", Utils::GetSize(2)))
-	{
-		Editor::CheckForUpdate();
-	}
+    if (ImGui::Button("Check update", Utils::GetSize(2)))
+    {
+        Updater::CheckUpdate();
+    }
     ImGui::Spacing();
     ImGui::Columns(2, NULL, false);
     ImGui::Text(EDITOR_NAME);
@@ -424,14 +424,20 @@ void Interface::DrawPopupMenu()
         return;
     }
 
+    if (Updater::IsUpdateAvailable())
+    {
+        m_popupTitle = "Update available!";
+        m_pPopupFunc = UpdateFoundMenu;
+    }
+
     ImGuiWindowFlags flags =  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
-    
+
     static ImVec2 prevSize;
     ImGui::SetNextWindowSizeConstraints(ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95), // manually tested
-                    ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95));
+                                        ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95));
 
     ImGui::SetNextWindowPos(ImVec2((Viewport::m_fViewportSize.x - prevSize.x)/2,
-     (Viewport::m_fViewportSize.y - prevSize.y)/2), ImGuiCond_Always);
+                                   (Viewport::m_fViewportSize.y - prevSize.y)/2), ImGuiCond_Always);
     if (ImGui::Begin(m_popupTitle.c_str(), &m_bShowPopup, flags))
     {
         if (m_pPopupFunc)
@@ -440,6 +446,12 @@ void Interface::DrawPopupMenu()
         }
         prevSize = ImGui::GetWindowSize();
         ImGui::End();
+    }
+
+    // Reset state on window close
+    if (Updater::IsUpdateAvailable() && !m_pPopupFunc)
+    {
+        Updater::ResetUpdaterState();
     }
 }
 
@@ -466,7 +478,7 @@ void Interface::DrawMainMenuBar()
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-       
+
         if (ImGui::BeginMenu("File"))
         {
             if (ImGui::MenuItem("Export"))
@@ -486,7 +498,7 @@ void Interface::DrawMainMenuBar()
         if (ImGui::BeginMenu("Options"))
         {
             static bool bNoPeds, bNoVehicles;
-            
+
             if (ImGui::MenuItem("Auto snap to ground", NULL, &Interface::m_bAutoSnapToGround))
             {
                 gConfig.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
@@ -596,7 +608,7 @@ void Interface::DrawInfoMenu()
     {
         return;
     }
-    
+
     // ---------------------------------------------------
     // do calcualtes for pos & size
     float width = screen::GetScreenWidth();
@@ -604,8 +616,8 @@ void Interface::DrawInfoMenu()
     float frameHeight = ImGui::GetFrameHeight();
     ImGui::SetNextWindowPos(ImVec2(width-menuWidth+1.0f, frameHeight));
     ImGui::SetNextWindowSize(ImVec2(menuWidth, screen::GetScreenHeight()-frameHeight));
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar + ImGuiWindowFlags_NoMove 
-        + ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar + ImGuiWindowFlags_NoMove
+                             + ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize;
 
     // ---------------------------------------------------
 
@@ -622,7 +634,7 @@ void Interface::DrawInfoMenu()
                     // ---------------------------------------------------
                     // Object info
                     if (ObjManager::m_pSelected)
-                    {   
+                    {
                         ImGui::Text("Object selection");
                         ImGui::Separator();
                         ImGui::Spacing();
@@ -632,7 +644,7 @@ void Interface::DrawInfoMenu()
                         auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
                         int model = ObjManager::m_pSelected->m_nModelIndex;
                         if (ObjManager::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
-                        || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING)
+                                || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING)
                         {
                             static int bmodel = 0;
                             static std::string name = "";
@@ -645,8 +657,8 @@ void Interface::DrawInfoMenu()
                             }
 
                             ImGui::Spacing();
-	                        ImGui::SameLine();
-                            ImGui::Text("Name: %s", name.c_str()); 
+                            ImGui::SameLine();
+                            ImGui::Text("Name: %s", name.c_str());
                         }
 
                         ImGui::Columns(2, NULL, false);
@@ -654,14 +666,14 @@ void Interface::DrawInfoMenu()
                         ImGui::NextColumn();
                         switch(ObjManager::m_pSelected->m_nType)
                         {
-                            case ENTITY_TYPE_OBJECT:
-                                ImGui::Text("Type: Dynamic");
-                                break;
-                            case ENTITY_TYPE_BUILDING:
-                                ImGui::Text("Type: Static");
-                                break;
-                            default:
-                                ImGui::Text("Type: Unknown");
+                        case ENTITY_TYPE_OBJECT:
+                            ImGui::Text("Type: Dynamic");
+                            break;
+                        case ENTITY_TYPE_BUILDING:
+                            ImGui::Text("Type: Static");
+                            break;
+                        default:
+                            ImGui::Text("Type: Unknown");
                         }
                         ImGui::Columns(1);
 
@@ -728,7 +740,7 @@ void Interface::DrawInfoMenu()
                                 data.SetRotation(rot);
                             }
                         }
-                        
+
                         ImGui::Spacing();
                     }
 
@@ -753,11 +765,11 @@ void Interface::DrawInfoMenu()
                     if (ImGui::SliderFloat("Zoom", &Viewport::m_fFOV, 10.0f, 115.0f))
                     {
                         TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
-		                Command<Commands::CAMERA_PERSIST_FOV>(true);
+                        Command<Commands::CAMERA_PERSIST_FOV>(true);
                     }
                     ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10);
                     ImGui::Spacing();
-                    
+
                     // ---------------------------------------------------
                     // Time
                     ImGui::Text("Time");
@@ -821,7 +833,7 @@ void Interface::DrawInfoMenu()
                     }
 
                     if (ObjManager::m_pVecEntities.size() > 500)
-                    {   
+                    {
                         if (bShowAnyway)
                         {
                             ImGui::SameLine();
@@ -839,7 +851,7 @@ void Interface::DrawInfoMenu()
                             {
                                 bShowAnyway = true;
                             }
-                        }      
+                        }
                     }
                     ImGui::Spacing();
 
@@ -879,16 +891,16 @@ void Interface::DrawInfoMenu()
                                     CVector vec = *matrix * workVec;
 
                                     // TODO: Rotate the camera to face the object
-                                    
+
                                     Viewport::SetCameraPosn(vec);
                                     ObjManager::m_pSelected = pObj;
                                 }
                             }
-                        
+
                             ImGui::EndChild();
                         }
                     }
-                }            
+                }
                 ImGui::EndTabItem();
             }
             //----------------------------------------------------
@@ -923,8 +935,8 @@ void Interface::DrawInfoMenu()
                     }
                     ImGui::Spacing();
                 }
-                Widgets::DrawJSON(m_locData, 
-                [](std::string& root, std::string& key, std::string& loc)
+                Widgets::DrawJSON(m_locData,
+                                  [](std::string& root, std::string& key, std::string& loc)
                 {
                     try
                     {
@@ -950,7 +962,7 @@ void Interface::DrawInfoMenu()
                             CHud::SetHelpMessage("Location removed", false, false, false);
                             m_locData.m_pJson->WriteToDisk();
                         }
-                        else 
+                        else
                         {
                             CHud::SetHelpMessage("You can only remove custom location", false, false, false);
                         }
@@ -961,8 +973,8 @@ void Interface::DrawInfoMenu()
             }
             //----------------------------------------------------
             // Browser
-            if(ImGui::BeginTabItem("Browser", NULL, 
-            m_bOpenObjectBrowser ? ImGuiTabItemFlags_SetSelected : NULL))
+            if(ImGui::BeginTabItem("Browser", NULL,
+                                   m_bOpenObjectBrowser ? ImGuiTabItemFlags_SetSelected : NULL))
             {
                 m_bOpenObjectBrowser = false;
                 m_bObjectBrowserShown = true;
@@ -1065,7 +1077,7 @@ void Interface::DrawInfoMenu()
 
                         if (ImGui::Button("Search", Utils::GetSize()))
                         {
-                            full_search:
+full_search:
                             searchResults.clear();
                             for (auto &ipl : ObjManager::m_vecModelNames)
                             {
@@ -1106,16 +1118,16 @@ void Interface::DrawInfoMenu()
                     if(ImGui::BeginTabItem("Favourites"))
                     {
                         ImGui::Spacing();
-                        Widgets::DrawJSON(m_favData, 
-                        [](std::string& root, std::string& key, std::string& model)
+                        Widgets::DrawJSON(m_favData,
+                                          [](std::string& root, std::string& key, std::string& model)
                         {
                             m_nBrowserSelectedModelId = std::stoi(model);
                         },
                         [](std::string& root, std::string& key, std::string& value)
-                        {   
+                        {
                             if (ImGui::MenuItem("Copy"))
                             {
-                                 Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                                Viewport::COPY_MODEL::m_nModel = std::stoi(value);
                                 CHud::SetHelpMessage("Object Copied", false, false, false);
                             }
                             if (ImGui::MenuItem("Remove"))
@@ -1144,17 +1156,17 @@ void Interface::DrawInfoMenu()
 void Interface::UpdateFoundMenu()
 {
     if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
-	{
-		ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
-	}
+    {
+        ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
+    }
     ImGui::SameLine();
-	if (ImGui::Button("Downlod page", Utils::GetSize(2)))
-	{
-		ShellExecute(NULL, "open", "https://github.com/user-grinch/Map-Editor/", NULL, NULL, SW_SHOWNORMAL);
-	}
+    if (ImGui::Button("Downlod page", Utils::GetSize(2)))
+    {
+        ShellExecute(NULL, "open", "https://github.com/user-grinch/Map-Editor/", NULL, NULL, SW_SHOWNORMAL);
+    }
     ImGui::Spacing();
     Widgets::CenterdText("Current version: " EDITOR_VERSION_NUMBER);
-    Widgets::CenterdText("Latest version: " + Editor::m_LatestVersion);
+    Widgets::CenterdText("Latest version: " + Updater::GetUpdateVersion());
     ImGui::Dummy(ImVec2(0,20));
 
     ImGui::TextWrapped("A newer version of Map Editor is available with,");

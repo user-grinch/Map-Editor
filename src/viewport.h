@@ -14,7 +14,7 @@ enum VIEWPORT_STATE
 class Viewport
 {
 private:
-    static inline bool m_bInitialized; 
+    static inline bool m_bInitialized;
     static inline CVector m_fTotalMouse; // stores the mouse position
     static inline BYTE m_bHudState; // backup for Shutdown()
     static inline BYTE m_bRadarState; // backup for Shutdown()
@@ -26,13 +26,13 @@ private:
 
     static void LoadNewClump(int model, RpClump *&pClump, RpAtomic *&pAtomic, RwFrame *&pFrame);
     static void RenderObjectBrowserModel();
-    
+
 public:
     static inline float m_nRenderScale = 1.0f; // ObjectBrowser object render scale
     static inline bool m_bShowContextMenu;
-	static inline bool m_bShowHoverMenu; // tooltup menu showing info on hover
+    static inline bool m_bShowHoverMenu; // tooltup menu showing info on hover
     static inline bool m_bBeingHovered;
-    static inline VIEWPORT_STATE m_eViewportMode = EDIT_MODE; 
+    static inline VIEWPORT_STATE m_eViewportMode = EDIT_MODE;
     static inline int m_nMul = 1; // movement speed multiplier for viewport realted controls
     static inline float m_fFOV = 70.0f; // camera field of view
     static inline CVector m_vecWorldPos;
@@ -45,7 +45,7 @@ public:
         static inline int m_nModel;
         static inline CVector m_vecRot;
     };
-    
+
     Viewport() = delete;
     Viewport(Viewport&) = delete;
 

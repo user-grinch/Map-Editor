@@ -8,17 +8,17 @@ class Interface
 private:
     static inline ResourceStore m_locData{ "locations", eResourceType::TYPE_TEXT };
     struct ContextMenuData
-	{
-		std::function<void(std::string&, std::string&, std::string&)> function;
-		std::string key;
-		std::string rootKey;
-		std::string value;
-	};
+    {
+        std::function<void(std::string&, std::string&, std::string&)> function;
+        std::string key;
+        std::string rootKey;
+        std::string value;
+    };
 
 public:
     static inline bool m_bAutoSnapToGround;
     static inline bool m_bWelcomeScreenDisplayed;
-    static inline bool m_bShowInfoMenu; // right hand menu 
+    static inline bool m_bShowInfoMenu; // right hand menu
     static inline ContextMenuData m_contextMenu;
     static inline ResourceStore m_favData{ "favourites", eResourceType::TYPE_TEXT };
     static inline bool m_bOpenObjectBrowser;
@@ -28,7 +28,7 @@ public:
     static inline std::string m_popupTitle;
     static inline std::function<void()> m_pPopupFunc;
     static inline bool m_bIsInputLocked; // Input locked by some imgui widgets
-    
+
     Interface() = delete;
     Interface(Interface&) = delete;
 
@@ -37,7 +37,7 @@ public:
     static void DrawPopupMenu();
     static void ImportMenu();
     static void ExportMenu();
-    
+
     // Custom popup menu codes
     static void QuickObjectCreateMenu();
     static void AboutEditorMenu();

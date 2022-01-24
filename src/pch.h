@@ -7,6 +7,14 @@
 #define RAD_TO_DEG(x) x*-57.2958f
 #define IMGUI_DEFINE_MATH_OPERATORS
 
+#ifdef GTASA
+#define BY_GAME(sa, vc, iii) sa
+#elif GTAVC
+#define BY_GAME(sa, vc, iii) vc
+#elif GTA3
+#define BY_GAME(sa, vc, iii) iii
+#endif
+
 #include <d3d9.h>
 #include <d3d11.h>
 #include <d3d11Shader.h>
@@ -22,22 +30,24 @@
 #include <extensions/ScriptCommands.h>
 #include <extensions/scripting/ScriptCommandNames.h>
 #include <CTimer.h>
+#include <CHud.h>
 
 #include "vkeys.h"
-#include "versioninfo.h"
+#include "version.h"
 #include "resourcestore.h"
+#include "updater.h"
+#include "fontmgr.h"
+#include "d3dhook.h"
 
 #include "../depend/imgui/imgui.h"
-#include "../depend/imgui/imgui_impl_dx9.h"
-#include "../depend/imgui/imgui_impl_win32.h"
 
 using namespace plugin;
 
 enum eRenderer
 {
-	Render_DirectX9,
-	Render_DirectX11,
-	Render_Unknown
+    Render_DirectX9,
+    Render_DirectX11,
+    Render_Unknown
 };
 
 static eRenderer gRenderer = Render_Unknown;

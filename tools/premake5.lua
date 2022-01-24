@@ -24,18 +24,18 @@ workspace "MapEditorSA"
     cppdialect "C++20"
     characterset "MBCS"
     staticruntime "On"
-    location "build"
+    location "../build"
 
-    project "Depend"
+    project "depend"
         kind "StaticLib"
         targetdir "build/bin"
 
         files { 
-            "depend/**",
-            "depend/**.h", 
-            "depend/**.hpp", 
-            "depend/**.c", 
-            "depend/**.cpp" 
+            "../depend/**",
+            "../depend/**.h", 
+            "../depend/**.hpp", 
+            "../depend/**.c", 
+            "../depend/**.cpp" 
         }
         libdirs (PSDK_DIR .. "/output/lib")
 
@@ -54,9 +54,9 @@ workspace "MapEditorSA"
         targetextension ".asi"
         
         files { 
-            "src/**.h", 
-            "src/**.hpp", 
-            "src/**.cpp" 
+            "../src/**.h", 
+            "../src/**.hpp", 
+            "../src/**.cpp" 
         }
         includedirs {
             PSDK_DIR .. "/plugin_sa/",
@@ -69,38 +69,36 @@ workspace "MapEditorSA"
         
         defines { 
             "NDEBUG", 
-            "IS_PLATFORM_WIN" ,
             "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NON_CONFORMING_SWPRINTFS",
             "GTASA",
             "_DX9_SDK_INSTALLED",
-            "PLUGIN_SGV_10US"
+            "PLUGIN_SGV_10US",
+            "GTASA"
         }
 
         pchheader "pch.h"
-        pchsource "src/pch.cpp"
+        pchsource "../src/pch.cpp"
 
         filter "configurations:Debug"
             symbols "On"
             links { 
-                "Depend",
+                "depend",
                 "d3d9",
                 "d3dx9",
                 "d3d11",
                 "urlmon",
-                "XInput9_1_0",
                 "plugin_d.lib" 
             }
 
         filter "configurations:Release"
             optimize "On"
             links { 
-                "Depend",
+                "depend",
                 "d3d9",
                 "d3dx9",
                 "d3d11",
                 "urlmon",
-                "XInput9_1_0",
                 "plugin.lib" 
             }
         

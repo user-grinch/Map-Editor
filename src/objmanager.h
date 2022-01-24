@@ -48,17 +48,17 @@ public:
     * Vector for stories entity model names
     * Format: model = dffName
     */
-	static inline std::vector<std::pair<std::string, std::vector<std::pair<int, std::string>>>> m_vecModelNames; 
+    static inline std::vector<std::pair<std::string, std::vector<std::pair<int, std::string>>>> m_vecModelNames;
     static inline int totalIDELinesLoaded;
     static inline bool m_bDrawBoundingBox;
     static inline bool m_bDrawAxisLines;
 
-    /*  
+    /*
     * Currently selected entity
     * Points to nullptr if none is selected
     */
-    static inline CObject* m_pSelected; 
-	static inline std::vector<CObject*> m_pVecEntities; // Vector of currently places entities
+    static inline CObject* m_pSelected;
+    static inline std::vector<CObject*> m_pVecEntities; // Vector of currently places entities
     static inline ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
 
 
