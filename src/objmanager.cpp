@@ -3,6 +3,7 @@
 #include "objmanager.h"
 #include <CRenderer.h>
 #include <CModelInfo.h>
+#include <filesystem>
 
 /*
 *  Part of the source is taken from DrawColsSA by Sergeanur
@@ -129,15 +130,15 @@ void ObjManager::Init()
     * Store model names in a vector
     * FIXME: add support for modloader
     */
-    static std::string lastIplName;
+    static std::string lastIdeName;
     static std::vector<std::pair<int, std::string>> tempVec;
     static bool skip;
 
     CdeclEvent <AddressList<0x5B8428, H_CALL>, PRIORITY_BEFORE,  ArgPick2N<char*, 0, char*, 1>, void(char *a1, char* a2)>openCall;
     openCall += [](char *a1, char *a2)
     {
-        lastIplName = std::filesystem::path(a1).stem().string();
-        if (lastIplName == "DEFAULT" || lastIplName == "vehicles") // these two has vehicle entries
+        lastIdeName = std::filesystem::path(a1).stem().string();
+        if (lastIdeName == "DEFAULT" || lastIdeName == "vehicles" || lastIdeName == "peds") // these two has vehicle entries
         {
             skip = true;
         }
@@ -145,17 +146,17 @@ void ObjManager::Init()
         {
             if (tempVec.size() > 0)
             {
-                m_vecModelNames.push_back({std::move(lastIplName), std::move(tempVec)});
+                m_vecModelNames.push_back({std::move(lastIdeName), std::move(tempVec)});
             }
             skip = false;
         }
     };
+
     CdeclEvent <AddressList<0x5B85DD, H_CALL>, PRIORITY_AFTER,  ArgPickN<char*, 0>, void(char *str)>loadIdeEvent;
     loadIdeEvent += [](char *str)
     {
         if (!skip)
         {
-            std::stringstream ss(str);
             int model, unk2;
             char dffName[32], txdName[32];
             float unk;
@@ -164,6 +165,30 @@ void ObjManager::Init()
             totalIDELinesLoaded++;
         }
     };
+    
+    // Modloader
+    // We're only loading from ModLoader/MapEditor directory. 
+    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(PLUGIN_PATH((char*)"\\modloader\\MapEditor\\")))
+    {
+        if (dirEntry.path().extension() == ".ide")
+        {
+            std::ifstream file(dirEntry.path());
+            std::string line;
+            std::vector<std::pair<int, std::string>> temp;
+
+            while (std::getline(file, line))
+            {
+                int model, unk2;
+                char dffName[32], txdName[32];
+                float unk;
+                sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
+                temp.push_back({model, std::string(dffName)});
+            }
+
+            m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
+            totalIDELinesLoaded++;
+        }
+    }
     // ---------------------------------------------------
 }
 
