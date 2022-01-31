@@ -164,6 +164,8 @@ void Interface::WelcomeMenu()
         ImGui::TextWrapped("Click on the `Controls` button to get started. If you have suggestions let me know on Discord.");
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::TextWrapped("Before you go ahead and spam me with bug reports, keep in mind this is a alpha release, not even beta! Do some reasearch if the bug was already reported or not. Try on a FRESH GAME first. I'm NOT fixing bugs with X camera mod or Y graphics mod.");
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::TextWrapped("Partial modloader support has been implemented. Create a folder called 'MapEditor' in modloader folder and put your map mods there.");
         ImGui::Dummy(ImVec2(0, 30));
         ImGui::Text("Please note,");
         ImGui::TextWrapped("1. You are NOT allowed to reupload this modifiction.");

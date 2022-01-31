@@ -168,25 +168,29 @@ void ObjManager::Init()
     
     // Modloader
     // We're only loading from ModLoader/MapEditor directory. 
-    for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(PLUGIN_PATH((char*)"\\modloader\\MapEditor\\")))
+    std::string path = PLUGIN_PATH((char*)"\\modloader\\MapEditor\\");
+    if (std::filesystem::exists(path))
     {
-        if (dirEntry.path().extension() == ".ide")
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path))
         {
-            std::ifstream file(dirEntry.path());
-            std::string line;
-            std::vector<std::pair<int, std::string>> temp;
-
-            while (std::getline(file, line))
+            if (dirEntry.path().extension() == ".ide")
             {
-                int model, unk2;
-                char dffName[32], txdName[32];
-                float unk;
-                sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
-                temp.push_back({model, std::string(dffName)});
-            }
+                std::ifstream file(dirEntry.path());
+                std::string line;
+                std::vector<std::pair<int, std::string>> temp;
 
-            m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
-            totalIDELinesLoaded++;
+                while (std::getline(file, line))
+                {
+                    int model, unk2;
+                    char dffName[32], txdName[32];
+                    float unk;
+                    sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
+                    temp.push_back({model, std::string(dffName)});
+                }
+
+                m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
+                totalIDELinesLoaded++;
+            }
         }
     }
     // ---------------------------------------------------

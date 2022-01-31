@@ -10,7 +10,6 @@
 #include <CTxdStore.h>
 #include <CScene.h>
 #include <CSprite.h>
-#include "../depend/imgui/ImGuizmo.h"
 #include <D3dx9math.h>
 
 void Viewport::Init()

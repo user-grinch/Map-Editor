@@ -28,7 +28,7 @@ workspace "MapEditorSA"
 
     project "depend"
         kind "StaticLib"
-        targetdir "build/bin"
+        targetdir "../build/bin"
 
         files { 
             "../depend/**",
@@ -69,6 +69,7 @@ workspace "MapEditorSA"
         
         defines { 
             "NDEBUG", 
+            "IS_PLATFORM_WIN",
             "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NON_CONFORMING_SWPRINTFS",
             "GTASA",
