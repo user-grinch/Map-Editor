@@ -5,6 +5,7 @@
 void EditorThread(void* param)
 {
     ObjManager::Init();
+    Updater::CheckUpdate();
     Sleep(3000);
     // -------------------------------------------------------------
 

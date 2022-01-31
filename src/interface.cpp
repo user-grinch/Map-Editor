@@ -421,15 +421,16 @@ void Interface::AboutEditorMenu()
 
 void Interface::DrawPopupMenu()
 {
+    if (Updater::IsUpdateAvailable())
+    {
+        m_bShowPopup = true;
+        m_popupTitle = "Update available!";
+        m_pPopupFunc = UpdateFoundMenu;
+    }
+
     if (!m_bShowPopup)
     {
         return;
-    }
-
-    if (Updater::IsUpdateAvailable())
-    {
-        m_popupTitle = "Update available!";
-        m_pPopupFunc = UpdateFoundMenu;
     }
 
     ImGuiWindowFlags flags =  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
