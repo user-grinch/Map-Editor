@@ -58,7 +58,7 @@ void D3dHook::ProcessFrame(void* ptr)
         // Scale the menu if game resolution changed
         static ImVec2 fScreenSize = ImVec2(-1, -1);
         ImVec2 size(screen::GetScreenWidth(), screen::GetScreenHeight());
-        if (fScreenSize.x != size.x && fScreenSize.y != size.y)
+        if ((fScreenSize.x != size.x && fScreenSize.y != size.y) || FontMgr::IsReloadNeeded())
         {
             FontMgr::ReloadFonts();
 

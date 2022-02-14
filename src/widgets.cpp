@@ -2,6 +2,19 @@
 #include "widgets.h"
 #include "interface.h"
 
+void Widgets::ShowTooltip(const char* text)
+{
+    ImGui::SameLine();
+    ImGui::TextDisabled("?");
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::Text(text);
+        ImGui::EndTooltip();
+    }
+}
+
 bool Widgets::ListBoxStr(const char* label, std::vector<std::string>& all_items, std::string& selected)
 {
     bool rtn = false;

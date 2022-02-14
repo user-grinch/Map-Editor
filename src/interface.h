@@ -14,8 +14,10 @@ private:
         std::string rootKey;
         std::string value;
     };
+    static inline bool logImports;
 
 public:
+    static inline bool m_bAutoSave = true;
     static inline bool m_bAutoSnapToGround;
     static inline bool m_bWelcomeScreenDisplayed;
     static inline bool m_bShowInfoMenu; // right hand menu
@@ -37,6 +39,7 @@ public:
     static void DrawPopupMenu();
     static void ImportMenu();
     static void ExportMenu();
+    static void SettingsMenu();
 
     // Custom popup menu codes
     static void QuickObjectCreateMenu();

@@ -7,6 +7,7 @@
 #include "hotkeys.h"
 #include <CHud.h>
 #include <CMenuManager.h>
+#include "filemgr.h"
 
 void Editor::Init()
 {
@@ -21,6 +22,7 @@ void Editor::Init()
     ObjManager::m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
     Viewport::m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);
     Interface::m_bWelcomeScreenDisplayed = gConfig.GetValue("editor.welcomeDisplayed", false);
+    FontMgr::SetMultiplier(gConfig.GetValue("editor.fontMul", 1.0f));
 
     if (!Interface::m_bWelcomeScreenDisplayed)
     {
@@ -75,6 +77,18 @@ void Editor::DrawWindow()
             Interface::DrawPopupMenu();
             Interface::DrawInfoMenu();
             Viewport::DrawHoverMenu();
+
+            if (Interface::m_bAutoSave)
+            {
+                static size_t timer = CTimer::m_snTimeInMilliseconds;
+                size_t curTimer = CTimer::m_snTimeInMilliseconds;
+
+                if (curTimer - timer > 60000)
+                {
+                    FileMgr::ExportIPL("auto_save.ipl");
+                    timer = curTimer;
+                }
+            }
         }
     }
     else

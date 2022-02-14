@@ -5,7 +5,7 @@
 #include <fstream>
 #include <CHud.h>
 
-void FileMgr::ImportIPL(std::string fileName)
+void FileMgr::ImportIPL(std::string fileName, bool logImports)
 {
     static int counter = 0;
     std::fstream file;
@@ -28,7 +28,12 @@ void FileMgr::ImportIPL(std::string fileName)
         if (sscanf(line.c_str(), "%d %s %d %f %f %f %f %f %f %f %d", &model, modelName, &interior,
                    &pos.x, &pos.y, &pos.z, &rx, &ry, &rz, &rw, &unk) == 11)
         {
-            int hObj;
+            if (logImports)
+            {
+                gLog << "Pasing line: " << line << std::endl;
+            }
+            
+            int hObj; 
             Command<Commands::REQUEST_MODEL>(model);
             Command<Commands::LOAD_ALL_MODELS_NOW>();
             Command<Commands::CREATE_OBJECT>(model, pos.x, pos.y, pos.z, &hObj);

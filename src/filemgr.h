@@ -7,6 +7,6 @@ public:
     FileMgr(FileMgr&) = delete;
 
     static void ExportIPL(const char* fileName);
-    static void ImportIPL(std::string fileName);
+    static void ImportIPL(std::string fileName, bool logImports);
 };
 

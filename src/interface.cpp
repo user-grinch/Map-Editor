@@ -65,9 +65,12 @@ void Interface::ImportMenu()
         ImGui::Dummy(ImVec2(0, 20));
         static std::string selectedFileName = "";
 
+        ImGui::Checkbox("Log imports", &logImports);
+        Widgets::ShowTooltip("Logs imports line by line in MapEditor.log.\nEnable this if the game crashes while importing\nand you want to know the error line.\n\nNote: Has performance impact!");
+
         if (ImGui::Button("Import IPL", Utils::GetSize(2)))
         {
-            FileMgr::ImportIPL(selectedFileName.c_str());
+            FileMgr::ImportIPL(selectedFileName.c_str(), logImports);
             m_bShowPopup = false;
         }
         ImGui::SameLine();
@@ -502,6 +505,10 @@ void Interface::DrawMainMenuBar()
         {
             static bool bNoPeds, bNoVehicles;
 
+            if (ImGui::MenuItem("Auto save every minute", NULL, &Interface::m_bAutoSave))
+            {
+                gConfig.SetValue("editor.autoSave", Interface::m_bAutoSave);
+            }
             if (ImGui::MenuItem("Auto snap to ground", NULL, &Interface::m_bAutoSnapToGround))
             {
                 gConfig.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
@@ -556,6 +563,24 @@ void Interface::DrawMainMenuBar()
                 }
                 ImGui::EndMenu();
             }
+            ImGui::Dummy(ImVec2(0, 10));
+            static float mul = 1;
+            static bool sliderClicked = false;
+            ImGui::Text("Font mul");
+            ImGui::SameLine();
+            ImGui::Spacing();
+            ImGui::SameLine();
+            if (ImGui::SliderFloat("##FontMul", &mul, 1, 5))
+            {
+                sliderClicked = true;
+            }
+            if (ImGui::IsMouseReleased(0) && sliderClicked)
+            {
+                gConfig.SetValue("editor.fontMul", mul);
+                FontMgr::SetMultiplier(mul);
+                sliderClicked = false;
+            }
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("View"))

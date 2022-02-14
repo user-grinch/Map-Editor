@@ -20,7 +20,7 @@ ImFont* FontMgr::LoadFont(const char* fontName, float fontMul)
     size_t fontSize = static_cast<int>(screen::GetScreenHeight() / 54.85f) * fontMul;
 
     std::string fullPath = std::string(PLUGIN_PATH((char*)"CheatMenu/fonts/")) + fontName + ".ttf";
-    m_vecFonts.push_back({io.Fonts->AddFontFromFileTTF(fullPath.c_str(), fontSize), fontSize, fontMul,
+    m_vecFonts.push_back({io.Fonts->AddFontFromFileTTF(fullPath.c_str(), fontSize), fontMul,
                           std::string(fontName)});
     io.Fonts->Build();
 
@@ -41,8 +41,23 @@ void FontMgr::ReloadFonts()
     {
         size_t fontSize = static_cast<int>(screen::GetScreenHeight() / 54.85f) * data.m_fMul;
         std::string fullPath = PLUGIN_PATH((char*)"CheatMenu/fonts/") + data.m_path + ".ttf";
-        data.m_pFont = io.Fonts->AddFontFromFileTTF(fullPath.c_str(), data.m_nSize);
+        data.m_pFont = io.Fonts->AddFontFromFileTTF(fullPath.c_str(), fontSize);
     }
     io.FontDefault = GetFont("text");
     io.Fonts->Build();
+    m_bMulChangedExternal = false;
+}
+
+void FontMgr::SetMultiplier(float fontMul)
+{
+    for (auto &data : m_vecFonts)
+    {
+        data.m_fMul = fontMul;
+    }
+    m_bMulChangedExternal = true;
+}
+
+bool FontMgr::IsReloadNeeded()
+{
+    return m_bMulChangedExternal;
 }
