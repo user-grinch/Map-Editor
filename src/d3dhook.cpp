@@ -139,9 +139,7 @@ void D3dHook::ProcessFrame(void* ptr)
         ImGui_ImplWin32_EnableDpiAwareness();
 
         // Loading fonts
-        io.FontDefault = FontMgr::LoadFont("text", 1.0f);
-        FontMgr::LoadFont("title", 2.0f);
-        FontMgr::LoadFont("header", 1.25f);
+        io.FontDefault = FontMgr::LoadFont(PLUGIN_PATH((char*)"MapEditor/fonts/text.ttf"), 1.0f);
 
         io.IniFilename = nullptr;
         io.LogFilename = nullptr;
