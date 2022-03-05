@@ -6,7 +6,19 @@ void EditorThread(void* param)
 {
     ObjManager::Init();
     Updater::CheckUpdate();
-    Sleep(3000);
+     /* 
+        Wait for game init
+        Doing it like this doesn't prevent you to attach debugger
+    */ 
+    static bool gameStarted = false;
+    Events::processScriptsEvent +=[]{
+        gameStarted = true;
+    };
+
+    while (!gameStarted)
+    {
+        Sleep(500);
+    }
     // -------------------------------------------------------------
 
     gLog << "Starting...\nVersion: "  EDITOR_VERSION  "\nAuthor: Grinch_\nDiscord: " DISCORD_INVITE "\nMore Info: "

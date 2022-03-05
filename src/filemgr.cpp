@@ -32,7 +32,7 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports)
             {
                 gLog << "Pasing line: " << line << std::endl;
             }
-            
+
             int hObj; 
             Command<Commands::REQUEST_MODEL>(model);
             Command<Commands::LOAD_ALL_MODELS_NOW>();
