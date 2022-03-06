@@ -8,6 +8,7 @@ private:
 
 public:
     static inline bool m_bShowEditor;
+    static inline bool m_bShowGUI = true;
 
     Editor() = delete;
     Editor(Editor&) = delete;

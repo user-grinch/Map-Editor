@@ -336,6 +336,12 @@ void Interface::EditorControls()
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
+            ImGui::Text("Toggle user interface");
+            ImGui::TableNextColumn();
+            ImGui::Text(toggleUIKey.GetNameString().c_str());
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
             ImGui::Text("Switch modes");
             ImGui::TableNextColumn();
             ImGui::Text(viewportSwitchKey.GetNameString().c_str());

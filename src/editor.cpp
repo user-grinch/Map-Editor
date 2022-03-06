@@ -42,6 +42,11 @@ void Editor::Init()
             Viewport::Process();
         }
 
+        if (toggleUIKey.Pressed())
+        {
+            Editor::m_bShowGUI = !Editor::m_bShowGUI;
+        }
+
         if (editorOpenKey.Pressed() && !Interface::m_bIsInputLocked)
         {
             Editor::m_bShowEditor = !Editor::m_bShowEditor;
@@ -98,14 +103,17 @@ void Editor::DrawWindow()
             }
             Interface::m_bIsInputLocked = false;
 
-            Interface::DrawMainMenuBar();
-            Viewport::DrawOverlay();
-            Viewport::ProcessSelectedObjectInputs();
-            Interface::DrawPopupMenu();
-            Interface::DrawInfoMenu();
-            Viewport::DrawHoverMenu();
+            if (m_bShowGUI)
+            {
+                Interface::DrawMainMenuBar();
+                Viewport::DrawOverlay();
+                Viewport::ProcessSelectedObjectInputs();
+                Interface::DrawPopupMenu();
+                Interface::DrawInfoMenu();
+                Viewport::DrawHoverMenu();
+            }
 
-            if (Interface::m_bAutoSave)
+            if (Interface::m_bAutoSave && ObjManager::m_pVecEntities.size() > 0)
             {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
