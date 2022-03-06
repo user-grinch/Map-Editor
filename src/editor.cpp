@@ -24,6 +24,7 @@ void Editor::Init()
     ObjManager::m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
     Viewport::m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);
     Interface::m_bWelcomeScreenDisplayed = gConfig.GetValue("editor.welcomeDisplayed", false);
+    Viewport::m_nMul = gConfig.GetValue("editor.moveSpeed", 1.0f);
     FontMgr::SetMultiplier(gConfig.GetValue("editor.fontMul", 1.0f));
 
     if (!Interface::m_bWelcomeScreenDisplayed)

@@ -523,6 +523,18 @@ void Interface::DrawMainMenuBar()
             {
                 gConfig.SetValue("editor.autoTpToLoc", Interface::m_bAutoTpToLoc);
             }
+            static bool bFreezeTime;
+            if (ImGui::MenuItem("Freeze time", NULL, &bFreezeTime))
+            {
+                if (bFreezeTime)
+                {
+                    patch::SetRaw(0x52CF10, (char*)"\xEB\xEF", 2);
+                }
+                else
+                {
+                    patch::SetRaw(0x52CF10, (char*)"\x56\x8B", 2);
+                }
+            }          
             if (ImGui::MenuItem("No pedstrain", NULL, &bNoPeds))
             {
                 if (bNoPeds)
@@ -589,6 +601,29 @@ void Interface::DrawMainMenuBar()
                 gConfig.SetValue("editor.fontMul", mul);
                 FontMgr::SetMultiplier(mul);
                 sliderClicked = false;
+            }
+            ImGui::Spacing();
+            int hour = CClock::ms_nGameClockHours;
+            int minute = CClock::ms_nGameClockMinutes;
+            ImGui::Text("Game Hour");
+            ImGui::SameLine();
+            ImGui::Spacing();
+            ImGui::SameLine();
+            if (ImGui::InputInt("##GameHOur", &hour))
+            {
+                if (hour < 0) hour = 23;
+                if (hour > 23) hour = 0;
+                CClock::ms_nGameClockHours = hour;
+            }
+            ImGui::Text("Game Min");
+            ImGui::SameLine();
+            ImGui::Spacing();
+            ImGui::SameLine();
+            if (ImGui::InputInt("##GameMinute", &minute))
+            {
+                if (minute < 0) minute = 59;
+                if (minute > 59) minute = 0;
+                CClock::ms_nGameClockMinutes = minute;
             }
 
             ImGui::EndMenu();
@@ -805,42 +840,11 @@ void Interface::DrawInfoMenu()
                         TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
                         Command<Commands::CAMERA_PERSIST_FOV>(true);
                     }
-                    ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10);
-                    ImGui::Spacing();
-
-                    // ---------------------------------------------------
-                    // Time
-                    ImGui::Text("Time");
-                    ImGui::Separator();
-                    static bool bFreezeTime;
-                    if (ImGui::Checkbox("Freeze time", &bFreezeTime))
+                    if (ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10))
                     {
-                        if (bFreezeTime)
-                        {
-                            patch::SetRaw(0x52CF10, (char*)"\xEB\xEF", 2);
-                        }
-                        else
-                        {
-                            patch::SetRaw(0x52CF10, (char*)"\x56\x8B", 2);
-                        }
+                        gConfig.SetValue("editor.moveSpeed", Viewport::m_nMul);
                     }
                     ImGui::Spacing();
-                    int hour = CClock::ms_nGameClockHours;
-                    int minute = CClock::ms_nGameClockMinutes;
-
-                    if (ImGui::InputInt("Hour", &hour))
-                    {
-                        if (hour < 0) hour = 23;
-                        if (hour > 23) hour = 0;
-                        CClock::ms_nGameClockHours = hour;
-                    }
-
-                    if (ImGui::InputInt("Minute", &minute))
-                    {
-                        if (minute < 0) minute = 59;
-                        if (minute > 59) minute = 0;
-                        CClock::ms_nGameClockMinutes = minute;
-                    }
                     ImGui::EndChild();
                 }
                 ImGui::EndTabItem();
