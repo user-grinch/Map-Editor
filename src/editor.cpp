@@ -16,6 +16,8 @@ void Editor::Init()
     Updater::CheckUpdate();
 
     // Load config data
+    Interface::m_bAutoSave = gConfig.GetValue("editor.autoSave", true);
+    Interface::m_bAutoTpToLoc = gConfig.GetValue("editor.autoTpToLoc", false);
     Interface::m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true);
     Interface::m_bShowInfoMenu = gConfig.GetValue("editor.showInfoMenu", true);
     ObjManager::m_bDrawBoundingBox = gConfig.GetValue("editor.drawBoundingBox", true);
@@ -44,18 +46,43 @@ void Editor::Init()
         {
             Editor::m_bShowEditor = !Editor::m_bShowEditor;
 
-            if (!Editor::m_bShowEditor)
+            if (Editor::m_bShowEditor)
             {
-                Viewport::m_eViewportMode = EDIT_MODE;
-                Interface::m_bObjectBrowserShown = false;
-                Interface::m_bOpenObjectBrowser = false;
-                D3dHook::SetMouseState(false);
-                gConfig.WriteToDisk();
-                Viewport::Shutdown();
+                if (Interface::m_bAutoTpToLoc)
+                {
+                    CVector pos;
+                    pos.x = gConfig.GetValue("editor.tp.X", -1.0f);
+                    pos.y = gConfig.GetValue("editor.tp.Y", -1.0f);
+                    pos.z = gConfig.GetValue("editor.tp.Z", -1.0f);
+
+                    if (pos.x != -1.0f)
+                    {
+                        Viewport::SetCameraPosn(pos);
+                    }
+                }
+            }
+            else
+            {
+                Editor::Cleanup();
             }
         }
     };
+
+    Events::shutdownRwEvent += []()
+    {
+       gConfig.WriteToDisk();
+    };
 };
+
+void Editor::Cleanup()
+{
+    Viewport::m_eViewportMode = EDIT_MODE;
+    Interface::m_bObjectBrowserShown = false;
+    Interface::m_bOpenObjectBrowser = false;
+    D3dHook::SetMouseState(false);
+    gConfig.WriteToDisk();
+    Viewport::Shutdown();
+}
 
 void Editor::DrawWindow()
 {

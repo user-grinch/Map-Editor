@@ -513,6 +513,10 @@ void Interface::DrawMainMenuBar()
             {
                 gConfig.SetValue("editor.autoSnap", Interface::m_bAutoSnapToGround);
             }
+            if (ImGui::MenuItem("Auto teleport to location", NULL, &Interface::m_bAutoTpToLoc))
+            {
+                gConfig.SetValue("editor.autoTpToLoc", Interface::m_bAutoTpToLoc);
+            }
             if (ImGui::MenuItem("No pedstrain", NULL, &bNoPeds))
             {
                 if (bNoPeds)
@@ -840,94 +844,127 @@ void Interface::DrawInfoMenu()
             // Created objects Tab
             if(ImGui::BeginTabItem("Objects"))
             {
-                static bool bShowAnyway;
-                static ImGuiTextFilter filter;
-
                 ImGui::Spacing();
-                if (ObjManager::m_pVecEntities.size() == 0)
+                if (ImGui::BeginTabBar("OBJBAR"))
                 {
-                    ImGui::TextWrapped("You haven't placed any objects yet!");
-                }
-                else
-                {
-                    if (ImGui::Button("Remove All", Utils::GetSize(bShowAnyway ? 2 : 1)))
+                    if(ImGui::BeginTabItem("All"))
                     {
-                        for (auto &pObj : ObjManager::m_pVecEntities)
-                        {
-                            pObj->Remove();
-                        }
-                        ObjManager::m_pSelected = nullptr;
-                        ObjManager::m_pVecEntities.clear();
-                    }
+                        static bool bShowAnyway;
+                        static ImGuiTextFilter filter;
 
-                    if (ObjManager::m_pVecEntities.size() > 500)
-                    {
-                        if (bShowAnyway)
+                        ImGui::Spacing();
+                        if (ObjManager::m_pVecEntities.size() == 0)
                         {
-                            ImGui::SameLine();
-                            if (ImGui::Button("Hide list", Utils::GetSize(2)))
-                            {
-                                bShowAnyway = false;
-                            }
+                            ImGui::TextWrapped("You haven't placed any objects yet!");
                         }
                         else
                         {
-                            ImGui::Spacing();
-                            ImGui::TextWrapped("You've placed more than 500 objects. The list has been hidden to avoid performance issues.");
-                            ImGui::Spacing();
-                            if (ImGui::Button("Show anyway", Utils::GetSize()))
+                            if (ImGui::Button("Remove All", Utils::GetSize(bShowAnyway ? 2 : 1)))
                             {
-                                bShowAnyway = true;
+                                for (auto &pObj : ObjManager::m_pVecEntities)
+                                {
+                                    pObj->Remove();
+                                }
+                                ObjManager::m_pSelected = nullptr;
+                                ObjManager::m_pVecEntities.clear();
+                            }
+
+                            if (ObjManager::m_pVecEntities.size() > 500)
+                            {
+                                if (bShowAnyway)
+                                {
+                                    ImGui::SameLine();
+                                    if (ImGui::Button("Hide list", Utils::GetSize(2)))
+                                    {
+                                        bShowAnyway = false;
+                                    }
+                                }
+                                else
+                                {
+                                    ImGui::Spacing();
+                                    ImGui::TextWrapped("You've placed more than 500 objects. The list has been hidden to avoid performance issues.");
+                                    ImGui::Spacing();
+                                    if (ImGui::Button("Show anyway", Utils::GetSize()))
+                                    {
+                                        bShowAnyway = true;
+                                    }
+                                }
+                            }
+                            ImGui::Spacing();
+
+                            if (ObjManager::m_pVecEntities.size() < 500 || bShowAnyway)
+                            {
+                                filter.Draw("Search");
+                                if (ImGui::IsItemActive())
+                                {
+                                    m_bIsInputLocked = true;
+                                }
+                                ImGui::Spacing();
+                                if (ImGui::BeginChild("Objects child"))
+                                {
+                                    for (size_t i = 0; i < ObjManager::m_pVecEntities.size(); i++)
+                                    {
+                                        CObject *pObj = ObjManager::m_pVecEntities[i];
+                                        auto &data = ObjManager::m_objData.Get(pObj);
+
+                                        if (data.m_modelName == "")
+                                        {
+                                            data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
+                                        }
+                                        char buf[32];
+                                        sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
+
+                                        if (filter.PassFilter(buf) && ImGui::MenuItem(buf))
+                                        {
+                                            // Setting the camera pos to bounding box
+                                            CMatrix *matrix = pObj->GetMatrix();
+                                            CColModel *pColModel = pObj->GetColModel();
+                                            CVector min = pColModel->m_boundBox.m_vecMin;
+                                            CVector max = pColModel->m_boundBox.m_vecMax;
+
+                                            CVector workVec = min;
+                                            workVec.x = max.x;
+                                            workVec.z = max.z;
+                                            CVector vec = *matrix * workVec;
+
+                                            // TODO: Rotate the camera to face the object
+
+                                            Viewport::SetCameraPosn(vec);
+                                            ObjManager::m_pSelected = pObj;
+                                        }
+                                    }
+
+                                    ImGui::EndChild();
+                                }
                             }
                         }
+                        ImGui::EndTabItem();
                     }
-                    ImGui::Spacing();
-
-                    if (ObjManager::m_pVecEntities.size() < 500 || bShowAnyway)
+                    if(ImGui::BeginTabItem("Favourites"))
                     {
-                        filter.Draw("Search");
-                        if (ImGui::IsItemActive())
-                        {
-                            m_bIsInputLocked = true;
-                        }
                         ImGui::Spacing();
-                        if (ImGui::BeginChild("Objects child"))
+                        Widgets::DrawJSON(m_favData, 
+                        [](std::string& root, std::string& key, std::string& value)
                         {
-                            for (size_t i = 0; i < ObjManager::m_pVecEntities.size(); i++)
+                            Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                            CHud::SetHelpMessage("Object Copied", false, false, false);
+                        },
+                        [](std::string& root, std::string& key, std::string& value)
+                        {
+                            if (ImGui::MenuItem("Copy"))
                             {
-                                CObject *pObj = ObjManager::m_pVecEntities[i];
-                                auto &data = ObjManager::m_objData.Get(pObj);
-
-                                if (data.m_modelName == "")
-                                {
-                                    data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
-                                }
-                                char buf[32];
-                                sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
-
-                                if (filter.PassFilter(buf) && ImGui::MenuItem(buf))
-                                {
-                                    // Setting the camera pos to bounding box
-                                    CMatrix *matrix = pObj->GetMatrix();
-                                    CColModel *pColModel = pObj->GetColModel();
-                                    CVector min = pColModel->m_boundBox.m_vecMin;
-                                    CVector max = pColModel->m_boundBox.m_vecMax;
-
-                                    CVector workVec = min;
-                                    workVec.x = max.x;
-                                    workVec.z = max.z;
-                                    CVector vec = *matrix * workVec;
-
-                                    // TODO: Rotate the camera to face the object
-
-                                    Viewport::SetCameraPosn(vec);
-                                    ObjManager::m_pSelected = pObj;
-                                }
+                                Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                                CHud::SetHelpMessage("Object Copied", false, false, false);
                             }
-
-                            ImGui::EndChild();
-                        }
+                            if (ImGui::MenuItem("Remove"))
+                            {
+                                m_favData.m_pJson->m_Data["All"].erase(key);
+                                m_favData.m_pJson->WriteToDisk();
+                            };
+                        });
+                        ImGui::EndTabItem();
                     }
+                    ImGui::EndTabBar();
                 }
                 ImGui::EndTabItem();
             }
@@ -935,6 +972,15 @@ void Interface::DrawInfoMenu()
             // Locations
             if(ImGui::BeginTabItem("Locations"))
             {
+                if (ImGui::Button("Set auto teleport location", Utils::GetSize()))
+                {
+                    CVector pos = TheCamera.GetPosition();
+                    gConfig.SetValue("editor.tp.X", pos.x);
+                    gConfig.SetValue("editor.tp.Y", pos.y);
+                    gConfig.SetValue("editor.tp.Z", pos.z);
+                    CHud::SetHelpMessage("Teleport location set", false, false, false);
+                }
+                ImGui::Spacing();
                 if (ImGui::CollapsingHeader("Add new"))
                 {
                     static char m_nLocationBuffer[64], m_nInputBuffer[64];

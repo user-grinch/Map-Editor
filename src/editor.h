@@ -15,4 +15,5 @@ public:
     static void Init();
     static void CheckForUpdate();
     static void DrawWindow();
+    static void Cleanup();
 };

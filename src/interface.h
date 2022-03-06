@@ -18,6 +18,7 @@ private:
 
 public:
     static inline bool m_bAutoSave = true;
+    static inline bool m_bAutoTpToLoc = false;
     static inline bool m_bAutoSnapToGround;
     static inline bool m_bWelcomeScreenDisplayed;
     static inline bool m_bShowInfoMenu; // right hand menu
