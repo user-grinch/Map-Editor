@@ -28,3 +28,4 @@ extern Hotkey snapKey;
 extern Hotkey editorOpenKey;
 extern Hotkey viewportSwitchKey;
 extern Hotkey toggleUIKey;
+extern Hotkey copyHoveredObjName;

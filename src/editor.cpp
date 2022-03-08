@@ -48,6 +48,13 @@ void Editor::Init()
             Editor::m_bShowGUI = !Editor::m_bShowGUI;
         }
 
+        if (copyHoveredObjName.Pressed())
+        {
+            std::string name = ObjManager::FindNameFromModel(Viewport::m_HoveredEntity->m_nModelIndex);
+            ImGui::SetClipboardText(name.c_str());
+            CHud::SetHelpMessage("Copied to clipboard", false, false, false);
+        }
+
         if (editorOpenKey.Pressed() && !Interface::m_bIsInputLocked)
         {
             Editor::m_bShowEditor = !Editor::m_bShowEditor;

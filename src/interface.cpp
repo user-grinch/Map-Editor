@@ -389,6 +389,12 @@ void Interface::EditorControls()
             ImGui::TableNextColumn();
             ImGui::Text(snapKey.GetNameString().c_str());
 
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("Copy hovered obj name");
+            ImGui::TableNextColumn();
+            ImGui::Text(copyHoveredObjName.GetNameString().c_str());
+
             // -------------------------------------------------------------
             ImGui::EndTable();
         }

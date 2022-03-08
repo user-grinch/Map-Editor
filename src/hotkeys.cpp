@@ -9,6 +9,7 @@ Hotkey snapKey(VK_KEY_Z, VK_KEY_Z);
 Hotkey editorOpenKey(VK_LCONTROL, VK_TAB);
 Hotkey viewportSwitchKey(VK_KEY_E, VK_KEY_E);
 Hotkey toggleUIKey(VK_LCONTROL, VK_KEY_P);
+Hotkey copyHoveredObjName(VK_LSHIFT, VK_KEY_C);
 
 bool Hotkey::DrawUI(const char* label)
 {
