@@ -579,6 +579,14 @@ static void ContextMenu_Paste()
         CObject *pEntity = CPools::GetObject(hObj);
         auto &data = ObjManager::m_objData.Get(pEntity);
         data.m_modelName = ObjManager::FindNameFromModel(Viewport::COPY_MODEL::m_nModel);
+
+        if (ObjManager::bRandomRot)
+        {
+            Viewport::COPY_MODEL::m_vecRot.x = Random(ObjManager::randomRotX[0], ObjManager::randomRotX[1]);
+            Viewport::COPY_MODEL::m_vecRot.y = Random(ObjManager::randomRotY[0], ObjManager::randomRotY[1]);
+            Viewport::COPY_MODEL::m_vecRot.z = Random(ObjManager::randomRotZ[0], ObjManager::randomRotZ[1]);
+        }
+        
         data.SetRotation(Viewport::COPY_MODEL::m_vecRot);
 
         ObjManager::m_pVecEntities.push_back(pEntity);

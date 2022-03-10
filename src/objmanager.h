@@ -60,6 +60,8 @@ public:
     static inline CObject* m_pSelected;
     static inline std::vector<CObject*> m_pVecEntities; // Vector of currently places entities
     static inline ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
+    static inline bool bRandomRot; // places objects randomly
+    static inline float randomRotX[2], randomRotY[2], randomRotZ[2]; // min max rotations 
 
 
     ObjManager() = delete;

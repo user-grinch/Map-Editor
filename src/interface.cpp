@@ -714,143 +714,164 @@ void Interface::DrawInfoMenu()
                     // Object info
                     if (ObjManager::m_pSelected)
                     {
-                        ImGui::Text("Object selection");
-                        ImGui::Separator();
-                        ImGui::Spacing();
-
-                        int hObj = CPools::GetObjectRef(ObjManager::m_pSelected);
-                        CVector *objPos = &ObjManager::m_pSelected->GetPosition();
-                        auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-                        int model = ObjManager::m_pSelected->m_nModelIndex;
-                        if (ObjManager::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
-                                || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING)
+                        if (ImGui::CollapsingHeader("Object selection", ImGuiTreeNodeFlags_DefaultOpen))
                         {
-                            static int bmodel = 0;
-                            static std::string name = "";
+                            ImGui::Separator();
+                            ImGui::Spacing();
 
-                            // lets not go over 20000 models each frame
-                            if (bmodel != model)
+                            int hObj = CPools::GetObjectRef(ObjManager::m_pSelected);
+                            CVector *objPos = &ObjManager::m_pSelected->GetPosition();
+                            auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
+                            int model = ObjManager::m_pSelected->m_nModelIndex;
+                            if (ObjManager::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
+                                    || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING)
                             {
-                                name = ObjManager::FindNameFromModel(model);
-                                bmodel = model;
+                                static int bmodel = 0;
+                                static std::string name = "";
+
+                                // lets not go over 20000 models each frame
+                                if (bmodel != model)
+                                {
+                                    name = ObjManager::FindNameFromModel(model);
+                                    bmodel = model;
+                                }
+
+                                ImGui::Spacing();
+                                ImGui::SameLine();
+                                ImGui::Text("Name: %s", name.c_str());
+                            }
+
+                            ImGui::Columns(2, NULL, false);
+                            ImGui::Text("Model: %d", model);
+                            ImGui::NextColumn();
+                            switch(ObjManager::m_pSelected->m_nType)
+                            {
+                            case ENTITY_TYPE_OBJECT:
+                                ImGui::Text("Type: Dynamic");
+                                break;
+                            case ENTITY_TYPE_BUILDING:
+                                ImGui::Text("Type: Static");
+                                break;
+                            default:
+                                ImGui::Text("Type: Unknown");
+                            }
+                            ImGui::Columns(1);
+
+                            ImGui::Spacing();
+                            CVector rot = data.GetRotation();
+
+                            if (ImGui::InputFloat("Pos X##Obj", &objPos->x))
+                            {
+                                Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
+                            }
+                            if (ImGui::InputFloat("Pos Y##Obj", &objPos->y))
+                            {
+                                Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
+                            }
+                            if (ImGui::InputFloat("Pos Z##Obj", &objPos->z))
+                            {
+                                Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
                             }
 
                             ImGui::Spacing();
-                            ImGui::SameLine();
-                            ImGui::Text("Name: %s", name.c_str());
-                        }
-
-                        ImGui::Columns(2, NULL, false);
-                        ImGui::Text("Model: %d", model);
-                        ImGui::NextColumn();
-                        switch(ObjManager::m_pSelected->m_nType)
-                        {
-                        case ENTITY_TYPE_OBJECT:
-                            ImGui::Text("Type: Dynamic");
-                            break;
-                        case ENTITY_TYPE_BUILDING:
-                            ImGui::Text("Type: Static");
-                            break;
-                        default:
-                            ImGui::Text("Type: Unknown");
-                        }
-                        ImGui::Columns(1);
-
-                        ImGui::Spacing();
-                        CVector rot = data.GetRotation();
-
-                        if (ImGui::InputFloat("Pos X##Obj", &objPos->x))
-                        {
-                            Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
-                        }
-                        if (ImGui::InputFloat("Pos Y##Obj", &objPos->y))
-                        {
-                            Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
-                        }
-                        if (ImGui::InputFloat("Pos Z##Obj", &objPos->z))
-                        {
-                            Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos->x, objPos->y, objPos->z);
-                        }
-
-                        ImGui::Spacing();
-                        static int rotToggle = 0;
-                        ImGui::Columns(2, NULL, false);
-                        ImGui::RadioButton("Slider", &rotToggle, 0);
-                        ImGui::NextColumn();
-                        ImGui::RadioButton("Input", &rotToggle, 1);
-                        ImGui::Columns(1);
+                            static int rotToggle = 0;
+                            ImGui::Columns(2, NULL, false);
+                            ImGui::RadioButton("Slider", &rotToggle, 0);
+                            ImGui::NextColumn();
+                            ImGui::RadioButton("Input", &rotToggle, 1);
+                            ImGui::Columns(1);
 
 
-                        if (rotToggle == 0)
-                        {
-                            if (ImGui::SliderFloat("Rot X##Obj", &rot.x, 0.0f, 360.0f))
+                            if (rotToggle == 0)
                             {
-                                data.SetRotation(rot);
+                                if (ImGui::SliderFloat("Rot X##Obj", &rot.x, 0.0f, 360.0f))
+                                {
+                                    data.SetRotation(rot);
+                                }
+                                if (ImGui::SliderFloat("Rot Y##Obj", &rot.y, 0.0f, 360.0f))
+                                {
+                                    data.SetRotation(rot);
+                                }
+                                if (ImGui::SliderFloat("Rot Z##Obj", &rot.z, 0.0f, 360.0f))
+                                {
+                                    data.SetRotation(rot);
+                                }
                             }
-                            if (ImGui::SliderFloat("Rot Y##Obj", &rot.y, 0.0f, 360.0f))
+                            else
                             {
-                                data.SetRotation(rot);
-                            }
-                            if (ImGui::SliderFloat("Rot Z##Obj", &rot.z, 0.0f, 360.0f))
-                            {
-                                data.SetRotation(rot);
-                            }
-                        }
-                        else
-                        {
-                            if (ImGui::InputFloat("Rot X##Obj", &rot.x))
-                            {
-                                rot.x = rot.x > 360.0f ? rot.x - 360.0f : rot.x;
-                                rot.x = rot.x < 0.0f ? rot.x + 360.0f : rot.x;
-                                data.SetRotation(rot);
+                                if (ImGui::InputFloat("Rot X##Obj", &rot.x))
+                                {
+                                    rot.x = rot.x > 360.0f ? rot.x - 360.0f : rot.x;
+                                    rot.x = rot.x < 0.0f ? rot.x + 360.0f : rot.x;
+                                    data.SetRotation(rot);
+                                }
+
+                                if (ImGui::InputFloat("Rot Y##Obj", &rot.y))
+                                {
+                                    rot.y = rot.y > 360.0f ? rot.y - 360.0f : rot.y;
+                                    rot.y = rot.y < 0.0f ? rot.y + 360.0f : rot.y;
+                                    data.SetRotation(rot);
+                                }
+
+                                if (ImGui::InputFloat("Rot Z##Obj", &rot.z))
+                                {
+                                    rot.z = rot.z > 360.0f ? rot.z - 360.0f : rot.z;
+                                    rot.z = rot.z < 0.0f ? rot.z + 360.0f : rot.z;
+                                    data.SetRotation(rot);
+                                }
                             }
 
-                            if (ImGui::InputFloat("Rot Y##Obj", &rot.y))
-                            {
-                                rot.y = rot.y > 360.0f ? rot.y - 360.0f : rot.y;
-                                rot.y = rot.y < 0.0f ? rot.y + 360.0f : rot.y;
-                                data.SetRotation(rot);
-                            }
-
-                            if (ImGui::InputFloat("Rot Z##Obj", &rot.z))
-                            {
-                                rot.z = rot.z > 360.0f ? rot.z - 360.0f : rot.z;
-                                rot.z = rot.z < 0.0f ? rot.z + 360.0f : rot.z;
-                                data.SetRotation(rot);
-                            }
+                            ImGui::Spacing();
+                            ImGui::Separator();
                         }
 
-                        ImGui::Spacing();
+                        if (ImGui::CollapsingHeader("Random rotations"))
+                        {
+                            ImGui::Checkbox("Enable",  &ObjManager::bRandomRot);
+                            Widgets::ShowTooltip("Places objects with random rotations in given range");
+
+                            ImGui::Spacing();
+                            ImGui::InputFloat2("Rot X##RR", ObjManager::randomRotX);
+                            ImGui::InputFloat2("Rot Y##RR", ObjManager::randomRotY);
+                            ImGui::InputFloat2("Rot Z##RR", ObjManager::randomRotZ);
+
+                            ImGui::Spacing();
+                            ImGui::Separator();
+                        }
                     }
 
                     // ---------------------------------------------------
                     // Camera
-                    ImGui::Text("Camera");
-                    ImGui::Separator();
-                    CVector pos = TheCamera.GetPosition();
-                    if (ImGui::InputFloat("Pos X##Cam", &pos.x))
+                    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        Viewport::SetCameraPosn(pos);
+                        ImGui::Separator();
+                        CVector pos = TheCamera.GetPosition();
+                        if (ImGui::InputFloat("Pos X##Cam", &pos.x))
+                        {
+                            Viewport::SetCameraPosn(pos);
+                        }
+                        if (ImGui::InputFloat("Pos Y##Cam", &pos.y))
+                        {
+                            Viewport::SetCameraPosn(pos);
+                        }
+                        if (ImGui::InputFloat("Pos Z##Cam", &pos.z))
+                        {
+                            Viewport::SetCameraPosn(pos);
+                        }
+                        ImGui::Spacing();
+                        if (ImGui::SliderFloat("Zoom", &Viewport::m_fFOV, 10.0f, 115.0f))
+                        {
+                            TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
+                            Command<Commands::CAMERA_PERSIST_FOV>(true);
+                        }
+                        if (ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10))
+                        {
+                            gConfig.SetValue("editor.moveSpeed", Viewport::m_nMul);
+                        }
+                        ImGui::Spacing();
+                        ImGui::Separator();
                     }
-                    if (ImGui::InputFloat("Pos Y##Cam", &pos.y))
-                    {
-                        Viewport::SetCameraPosn(pos);
-                    }
-                    if (ImGui::InputFloat("Pos Z##Cam", &pos.z))
-                    {
-                        Viewport::SetCameraPosn(pos);
-                    }
-                    ImGui::Spacing();
-                    if (ImGui::SliderFloat("Zoom", &Viewport::m_fFOV, 10.0f, 115.0f))
-                    {
-                        TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
-                        Command<Commands::CAMERA_PERSIST_FOV>(true);
-                    }
-                    if (ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10))
-                    {
-                        gConfig.SetValue("editor.moveSpeed", Viewport::m_nMul);
-                    }
-                    ImGui::Spacing();
+                    
                     ImGui::EndChild();
                 }
                 ImGui::EndTabItem();
