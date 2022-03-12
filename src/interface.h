@@ -20,6 +20,7 @@ public:
     static inline bool m_bAutoSave = true;
     static inline bool m_bAutoTpToLoc = false;
     static inline bool m_bAutoSnapToGround;
+    static inline bool m_bFramerate = false;
     static inline bool m_bWelcomeScreenDisplayed;
     static inline bool m_bShowInfoMenu; // right hand menu
     static inline ContextMenuData m_contextMenu;

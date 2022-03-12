@@ -20,6 +20,7 @@ void Editor::Init()
     Interface::m_bAutoTpToLoc = gConfig.GetValue("editor.autoTpToLoc", false);
     Interface::m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true);
     Interface::m_bShowInfoMenu = gConfig.GetValue("editor.showInfoMenu", true);
+    Interface::m_bFramerate = gConfig.GetValue("editor.showFPS", false);
     ObjManager::m_bDrawBoundingBox = gConfig.GetValue("editor.drawBoundingBox", true);
     ObjManager::m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
     Viewport::m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);

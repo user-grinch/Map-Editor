@@ -492,10 +492,14 @@ void Interface::DrawMainMenuBar()
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        ImGui::Text("Framerate: %0.1f", ImGui::GetIO().Framerate);
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        
+        if (Interface::m_bFramerate)
+        {
+            ImGui::Text("Framerate: %0.1f", ImGui::GetIO().Framerate);
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+        }
 
         if (ImGui::BeginMenu("File"))
         {
@@ -594,7 +598,7 @@ void Interface::DrawMainMenuBar()
             ImGui::Dummy(ImVec2(0, 10));
             static float mul = 1;
             static bool sliderClicked = false;
-            ImGui::Text("Font mul");
+            ImGui::Text("Font multip");
             ImGui::SameLine();
             ImGui::Spacing();
             ImGui::SameLine();
@@ -621,7 +625,7 @@ void Interface::DrawMainMenuBar()
                 if (hour > 23) hour = 0;
                 CClock::ms_nGameClockHours = hour;
             }
-            ImGui::Text("Game Min");
+            ImGui::Text("Game Minu");
             ImGui::SameLine();
             ImGui::Spacing();
             ImGui::SameLine();
@@ -643,6 +647,10 @@ void Interface::DrawMainMenuBar()
             if (ImGui::MenuItem("Bounding box", NULL, &ObjManager::m_bDrawBoundingBox))
             {
                 gConfig.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
+            }
+            if (ImGui::MenuItem("Framerate", NULL, &Interface::m_bFramerate))
+            {
+                gConfig.SetValue("editor.showFPS", Interface::m_bFramerate);
             }
             if (ImGui::MenuItem("Hover tooltip", NULL, &Viewport::m_bShowHoverMenu))
             {
@@ -716,9 +724,6 @@ void Interface::DrawInfoMenu()
                     {
                         if (ImGui::CollapsingHeader("Object selection", ImGuiTreeNodeFlags_DefaultOpen))
                         {
-                            ImGui::Separator();
-                            ImGui::Spacing();
-
                             int hObj = CPools::GetObjectRef(ObjManager::m_pSelected);
                             CVector *objPos = &ObjManager::m_pSelected->GetPosition();
                             auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
@@ -844,7 +849,6 @@ void Interface::DrawInfoMenu()
                     // Camera
                     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
                     {
-                        ImGui::Separator();
                         CVector pos = TheCamera.GetPosition();
                         if (ImGui::InputFloat("Pos X##Cam", &pos.x))
                         {
