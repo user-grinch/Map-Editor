@@ -60,8 +60,6 @@ void D3dHook::ProcessFrame(void* ptr)
         ImVec2 size(screen::GetScreenWidth(), screen::GetScreenHeight());
         if ((fScreenSize.x != size.x && fScreenSize.y != size.y) || FontMgr::IsReloadNeeded())
         {
-            FontMgr::ReloadFonts();
-
             if (gRenderer == Render_DirectX9)
             {
                 ImGui_ImplDX9_InvalidateDeviceObjects();
@@ -70,6 +68,8 @@ void D3dHook::ProcessFrame(void* ptr)
             {
                 ImGui_ImplDX11_InvalidateDeviceObjects();
             }
+
+            FontMgr::ReloadFonts();
 
             ImGuiStyle* style = &ImGui::GetStyle();
             float scaleX = size.x / 1366.0f;
@@ -98,7 +98,7 @@ void D3dHook::ProcessFrame(void* ptr)
 
         if (pCallbackFunc != nullptr)
         {
-            ((void(*)())pCallbackFunc)();
+            CallDyn<>((unsigned int)pCallbackFunc);
         }
 
         ImGui::EndFrame();
@@ -227,8 +227,8 @@ void D3dHook::ProcessMouse()
 #endif
         }
 
-        CPad::NewMouseControllerState.X = 0;
-        CPad::NewMouseControllerState.Y = 0;
+        CPad::NewMouseControllerState.x = 0;
+        CPad::NewMouseControllerState.y = 0;
 #ifdef GTA3
         CPad::GetPad(0)->ClearMouseHistory();
 #else

@@ -4,6 +4,7 @@
 #include <CRenderer.h>
 #include <CModelInfo.h>
 #include <filesystem>
+#include "filemgr.h"
 
 /*
 *  Part of the source is taken from DrawColsSA by Sergeanur
@@ -27,6 +28,7 @@ float ObjManager::GetBoundingBoxGroundZ(CObject *pObj)
     CVector max = pColModel->m_boundBox.m_vecMax;
 
     CVector workVec = min;
+    
     workVec.x = max.x;
     workVec.y = max.y;
     CVector ground = *matrix * workVec;
@@ -168,31 +170,7 @@ void ObjManager::Init()
     
     // Modloader
     // We're only loading from ModLoader/MapEditor directory. 
-    std::string path = PLUGIN_PATH((char*)"\\modloader\\MapEditor\\");
-    if (std::filesystem::exists(path))
-    {
-        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path))
-        {
-            if (dirEntry.path().extension() == ".ide")
-            {
-                std::ifstream file(dirEntry.path());
-                std::string line;
-                std::vector<std::pair<int, std::string>> temp;
-
-                while (std::getline(file, line))
-                {
-                    int model, unk2;
-                    char dffName[32], txdName[32];
-                    float unk;
-                    sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
-                    temp.push_back({model, std::string(dffName)});
-                }
-
-                m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
-                totalIDELinesLoaded++;
-            }
-        }
-    }
+    FileMgr::ImportIDE(PLUGIN_PATH((char*)"\\modloader\\MapEditor\\"));
     // ---------------------------------------------------
 }
 

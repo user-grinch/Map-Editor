@@ -51,7 +51,7 @@ void Viewport::Init()
     {
         Events::drawingEvent += []()
         {
-            if (Interface::m_bObjectBrowserShown)
+            if (Interface::Browser::m_bShown)
             {
                 // -------------------------------------------------
                 /*
@@ -81,8 +81,13 @@ void Viewport::LoadNewClump(int model, RpClump *&pClump, RpAtomic *&pAtomic, RwF
     pClump = nullptr;
     pAtomic = nullptr;
     pFrame = nullptr;
-    CStreaming::RequestModel(model, GAME_REQUIRED);
-    CStreaming::LoadAllRequestedModels(false);
+    
+    if (!Command<Commands::IS_MODEL_AVAILABLE>(model))
+    {
+        CStreaming::RequestModel(model, PRIORITY_REQUEST);
+        CStreaming::LoadAllRequestedModels(true);
+    }
+
     CBaseModelInfo* modelInfo = CModelInfo::GetModelInfo(model);
     int rwModelType = modelInfo->GetRwModelType();
     if (rwModelType == 1)
@@ -113,9 +118,15 @@ void Viewport::RenderObjectBrowserModel()
     static RpClump *pRpClump;
     static RwFrame *pRwFrame;
     static RpAtomic *pRpAtomic;
-    static int loadedModelId = -1;
+    static size_t loadedModelId = NULL;
 
-    if (loadedModelId != Interface::m_nBrowserSelectedModelId)
+    size_t modelId = Interface::Browser::GetSelected();
+    if (!modelId)
+    {
+        return;
+    }
+    
+    if (loadedModelId != modelId)
     {
         CBaseModelInfo *modelInfo = (CBaseModelInfo *)CModelInfo::GetModelInfo(loadedModelId);
         if (modelInfo) modelInfo->RemoveRef();
@@ -123,8 +134,8 @@ void Viewport::RenderObjectBrowserModel()
         if (pRpAtomic) RpAtomicDestroy(pRpAtomic);
         if (pRwFrame) RwFrameDestroy(pRwFrame);
         Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(loadedModelId);
-        LoadNewClump(Interface::m_nBrowserSelectedModelId, pRpClump, pRpAtomic, pRwFrame);
-        loadedModelId = Interface::m_nBrowserSelectedModelId;
+        LoadNewClump(modelId, pRpClump, pRpAtomic, pRwFrame);
+        loadedModelId = modelId;
     }
 
     static float rotation = 0.0f;
@@ -186,7 +197,7 @@ void Viewport::SetCameraPosn(const CVector &pos)
 void Viewport::DrawHoverMenu()
 {
     if (!m_bShowHoverMenu || m_eViewportMode != EDIT_MODE
-            || !m_bBeingHovered || Interface::m_bObjectBrowserShown)
+            || !m_bBeingHovered || Interface::Browser::m_bShown)
     {
         return;
     }
@@ -275,7 +286,7 @@ void Viewport::Process()
     }
 
     // Change object browser values if it's active
-    if (Interface::m_bObjectBrowserShown
+    if (Interface::Browser::m_bShown
             && Viewport::m_eViewportMode == VIEW_MODE)
     {
         CVector mouseDelta;
@@ -608,7 +619,7 @@ static void ContextMenu_Delete()
 
 void Viewport::ProcessContextMenu()
 {
-    if (Interface::m_bObjectBrowserShown || m_eViewportMode != EDIT_MODE)
+    if (Interface::Browser::m_bShown || m_eViewportMode != EDIT_MODE)
     {
         return;
     }
@@ -701,7 +712,7 @@ void Viewport::ProcessSelectedObjectInputs()
         // X, Y, Z axis movement
         // TODO: Z axis is kinda buggy
 
-        if (!Interface::m_bObjectBrowserShown)
+        if (!Interface::Browser::m_bShown)
         {
             static bool bObjectBeingDragged;
 

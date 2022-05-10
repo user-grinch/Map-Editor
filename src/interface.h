@@ -25,13 +25,23 @@ public:
     static inline bool m_bShowInfoMenu; // right hand menu
     static inline ContextMenuData m_contextMenu;
     static inline ResourceStore m_favData{ "favourites", eResourceType::TYPE_TEXT };
-    static inline bool m_bOpenObjectBrowser;
-    static inline bool m_bObjectBrowserShown;
-    static inline int m_nBrowserSelectedModelId = 0;
     static inline bool m_bShowPopup;
     static inline std::string m_popupTitle;
     static inline std::function<void()> m_pPopupFunc;
     static inline bool m_bIsInputLocked; // Input locked by some imgui widgets
+
+    static struct Browser
+    {
+    private:
+        static inline size_t m_nSelected = NULL;
+
+    public:
+        static inline bool m_bShowNextFrame;
+        static inline bool m_bShown;
+
+        static size_t GetSelected();
+        static void SetSelected(int modelId);
+    };
 
     Interface() = delete;
     Interface(Interface&) = delete;

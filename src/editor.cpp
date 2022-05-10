@@ -91,8 +91,8 @@ void Editor::Init()
 void Editor::Cleanup()
 {
     Viewport::m_eViewportMode = EDIT_MODE;
-    Interface::m_bObjectBrowserShown = false;
-    Interface::m_bOpenObjectBrowser = false;
+    Interface::Browser::m_bShown = false;
+    Interface::Browser::m_bShowNextFrame = false;
     D3dHook::SetMouseState(false);
     gConfig.WriteToDisk();
     Viewport::Shutdown();

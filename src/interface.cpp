@@ -11,6 +11,27 @@
 #include <CClock.h>
 #include <CPopulation.h>
 #include <filesystem>
+#include <CStreaming.h>
+
+size_t Interface::Browser::GetSelected()
+{
+    return m_nSelected;
+}
+
+void Interface::Browser::SetSelected(int modelId)
+{
+    /*
+        Check if the model is available first!
+        If not set model to -1
+    */
+    if (modelId > 0 && Command<Commands::IS_MODEL_IN_CDIMAGE>(modelId))
+    {
+        CStreaming::RequestModel(modelId, PRIORITY_REQUEST);
+        CStreaming::LoadAllRequestedModels(true);
+    }
+    
+    m_nSelected = Command<Commands::IS_MODEL_AVAILABLE>(modelId) ? modelId : NULL;
+}
 
 void Interface::SearchContextMenu(std::string& root, std::string& key, std::string& value)
 {
@@ -226,7 +247,7 @@ create_object:
         Viewport::m_eViewportMode = OBJECT_VIEW_MODE;
         Interface::m_bShowPopup = false;
         Interface::m_bShowPopup = false;
-        m_bOpenObjectBrowser = true;
+        Interface::Browser::m_bShowNextFrame = true;
     }
 }
 
@@ -1089,10 +1110,10 @@ void Interface::DrawInfoMenu()
             //----------------------------------------------------
             // Browser
             if(ImGui::BeginTabItem("Browser", NULL,
-                                   m_bOpenObjectBrowser ? ImGuiTabItemFlags_SetSelected : NULL))
+                                   Browser::m_bShowNextFrame ? ImGuiTabItemFlags_SetSelected : NULL))
             {
-                m_bOpenObjectBrowser = false;
-                m_bObjectBrowserShown = true;
+                Browser::m_bShowNextFrame = false;
+                Browser::m_bShown = true;
                 static ImGuiTextFilter IplFilter;
                 static ImGuiTextFilter totalFilter;
                 static std::vector<std::string> iplList;
@@ -1117,7 +1138,7 @@ void Interface::DrawInfoMenu()
                 ImGui::Spacing();
                 if (ImGui::Button("Copy render object", Utils::GetSize()))
                 {
-                    Viewport::COPY_MODEL::m_nModel = m_nBrowserSelectedModelId;
+                    Viewport::COPY_MODEL::m_nModel = Browser::GetSelected();
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
@@ -1158,7 +1179,7 @@ void Interface::DrawInfoMenu()
                                 {
                                     if (ImGui::MenuItem(text.c_str()))
                                     {
-                                        m_nBrowserSelectedModelId = data.first;
+                                        Interface::Browser::SetSelected(data.first);
                                     }
                                     if (ImGui::IsItemClicked(1))
                                     {
@@ -1215,7 +1236,7 @@ full_search:
                                 std::string text = std::to_string(data.first) + " - " +  data.second;
                                 if (ImGui::MenuItem(text.c_str()))
                                 {
-                                    m_nBrowserSelectedModelId = data.first;
+                                    Interface::Browser::SetSelected(data.first);
                                 }
                                 if (ImGui::IsItemClicked(1))
                                 {
@@ -1236,7 +1257,7 @@ full_search:
                         Widgets::DrawJSON(m_favData,
                                           [](std::string& root, std::string& key, std::string& model)
                         {
-                            m_nBrowserSelectedModelId = std::stoi(model);
+                            Interface::Browser::SetSelected((size_t)std::stoi(model));
                         },
                         [](std::string& root, std::string& key, std::string& value)
                         {
@@ -1259,7 +1280,7 @@ full_search:
             }
             else
             {
-                m_bObjectBrowserShown = false;
+                Browser::m_bShowNextFrame = false;
             }
             // ---------------------------------------------------
             ImGui::EndTabBar();

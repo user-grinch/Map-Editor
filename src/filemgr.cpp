@@ -5,6 +5,53 @@
 #include <fstream>
 #include <CHud.h>
 
+void FileMgr::ImportIDE(std::string path, bool logImports)
+{
+    if (std::filesystem::exists(path))
+    {
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path))
+        {
+            if (dirEntry.path().extension() == ".ide")
+            {
+                std::ifstream file(dirEntry.path());
+                std::string line;
+                std::vector<std::pair<int, std::string>> temp;
+
+                while (std::getline(file, line))
+                {
+                    if (line.starts_with("#"))
+                    {
+                        continue;
+                    }
+
+                    if (logImports)
+                    {
+                        gLog << "Pasing line: " << line << std::endl;
+                    }
+
+                    int model, unk2;
+                    char dffName[32], txdName[32];
+                    float unk;
+                    int rtn = sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
+
+                    if (rtn == 2)
+                    {
+                        char *c = strchr(dffName, ',');
+                        if (c)
+                        {
+                            *c = '\0';
+                        }
+                        temp.push_back({model, std::string(dffName)});
+                    }
+                }
+
+                ObjManager::m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
+                ObjManager::totalIDELinesLoaded++;
+            }
+        }
+    }
+}
+
 void FileMgr::ImportIPL(std::string fileName, bool logImports)
 {
     static int counter = 0;
