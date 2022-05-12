@@ -43,36 +43,35 @@ private:
         }
     };
 
+    // Draws bounding box & axis lines to the object
+    static void HighlightObject(CObject *pObj);
+
 public:
     /*
     * Vector for stories entity model names
     * Format: model = dffName
     */
     static inline std::vector<std::pair<std::string, std::vector<std::pair<int, std::string>>>> m_vecModelNames;
-    static inline int totalIDELinesLoaded;
-    static inline bool m_bDrawBoundingBox;
-    static inline bool m_bDrawAxisLines;
-
-    /*
-    * Currently selected entity
-    * Points to nullptr if none is selected
-    */
-    static inline CObject* m_pSelected;
-    static inline std::vector<CObject*> m_pVecEntities; // Vector of currently places entities
+    static inline std::vector<CObject*> m_pPlacedObjs; // Vector of currently placed entities
     static inline ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
-    static inline bool bRandomRot; // places objects randomly
-    static inline float randomRotX[2], randomRotY[2], randomRotZ[2]; // min max rotations 
+    static inline CObject* m_pSelected; // Currently selected entity, Points to nullptr if none is selected
+    static inline int m_nTotalIDELine; // Total number of ide lines
 
+    struct ClipBoard
+    {
+        static inline int m_nModel;
+        static inline CVector m_vecRot;
+    };
 
     ObjManager() = delete;
     ObjManager(ObjManager&) = delete;
-    static void Init();
-    static void HighlightSelectedObj(CObject *pObj);
-    static std::string FindNameFromModel(int model);
-    static void DrawColModel(const CMatrix& matrix, const CColModel& colModel);
 
-    /*
-    *   Returns the bottom Z bounding box coordinates
-    */
+    // Initializes obj manager stuff
+    static void Init();
+
+    // Returns object name from it's model
+    static std::string FindNameFromModel(int model);
+
+    // Returns the bottom Z bounding box coordinates
     static float GetBoundingBoxGroundZ(CObject *pObj);
 };

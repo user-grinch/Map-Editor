@@ -15,7 +15,7 @@ private:
     };
     static inline std::vector<FontInfo> m_vecFonts;
     static inline bool m_bMulChangedExternal;
-    
+
 public:
     FontMgr() = delete;
     FontMgr(FontMgr&) = delete;

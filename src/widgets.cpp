@@ -34,19 +34,15 @@ bool Widgets::ListBoxStr(const char* label, std::vector<std::string>& all_items,
     return rtn;
 }
 
-void Widgets::DrawJSON(ResourceStore& data,
-                       std::function<void(std::string&, std::string&, std::string&)> func_left_click,
-                       std::function<void(std::string&, std::string&, std::string&)> func_right_click)
+void Widgets::DrawJSON(ResourceStore& data, ContextMenu& context, f_Arg3 func_left_click, f_Arg3 func_right_click)
 {
     ImGui::PushItemWidth(ImGui::GetContentRegionAvailWidth() / 2 - 5);
     ListBoxStr("##Categories", data.m_Categories, data.m_Selected);
     ImGui::SameLine();
 
     data.m_Filter.Draw("##Filter");
-    if (ImGui::IsItemActive())
-    {
-        Interface::m_bIsInputLocked = true;
-    }
+
+    Interface::m_bInputLocked = ImGui::IsItemActive();
     if (strlen(data.m_Filter.InputBuf) == 0)
     {
         ImDrawList* drawlist = ImGui::GetWindowDrawList();
@@ -82,17 +78,35 @@ void Widgets::DrawJSON(ResourceStore& data,
 
                     if (ImGui::IsItemClicked(1) && func_right_click != nullptr)
                     {
-                        Interface::m_contextMenu.function = func_right_click;
-                        Interface::m_contextMenu.rootKey = root.key();
-                        Interface::m_contextMenu.key = name;
-                        Interface::m_contextMenu.value = _data.value();
+                        context.m_bShow = true;
+                        context.m_pFunc = func_right_click;
+                        context.m_Root = root.key();
+                        context.m_Key = name;
+                        context.m_Val = _data.value();
                     }
                 }
             }
         }
     }
-    Interface::ProcessContextMenu();
 
+    // context menu
+    if (context.m_bShow)
+    {
+        if (ImGui::BeginPopupContextWindow("TMenu"))
+        {
+            ImGui::Text(context.m_Key.c_str());
+            ImGui::Separator();
+
+            context.m_pFunc(context.m_Root, context.m_Key, context.m_Val);
+
+            if (ImGui::MenuItem("Close"))
+            {
+                context.m_bShow = false;
+            }
+
+            ImGui::EndPopup();
+        }
+    }
     ImGui::EndChild();
 }
 

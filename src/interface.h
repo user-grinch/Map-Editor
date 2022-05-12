@@ -1,66 +1,53 @@
 #pragma once
 #include "pch.h"
 
-#define DEFAULT_MODEL_ID 620
-
 class Interface
 {
 private:
     static inline ResourceStore m_locData{ "locations", eResourceType::TYPE_TEXT };
-    struct ContextMenuData
-    {
-        std::function<void(std::string&, std::string&, std::string&)> function;
-        std::string key;
-        std::string rootKey;
-        std::string value;
-    };
-    static inline bool logImports;
+
+    // Draws the top black bar contains menu options
+    static void DrawMainMenuBar();
+
+    // Draws the object specific right side pnael
+    static void DrawSidepanel();
+
+    // Draws the popups at the center of the screen
+    static void DrawPopupMenu();
 
 public:
     static inline bool m_bAutoSave = true;
-    static inline bool m_bAutoTpToLoc = false;
+    static inline bool m_bAutoTpToLoc;
     static inline bool m_bAutoSnapToGround;
-    static inline bool m_bFramerate = false;
-    static inline bool m_bWelcomeScreenDisplayed;
-    static inline bool m_bShowInfoMenu; // right hand menu
-    static inline ContextMenuData m_contextMenu;
+    static inline bool m_bDrawAxisLines;
+    static inline bool m_bDrawBoundingBox; // bouding box around selected objects
+    static inline bool m_bInputLocked; 
+    static inline bool m_bShowFPS;
+    static inline bool m_bShowGUI = true;
+    static inline bool m_bShowHoverMenu; // object hoverer tooltip ( shows model id & model name )
+    static inline bool m_bShowSidepanel;
+    static inline bool m_bWelcomeShown;
+    static inline bool m_bRandomRot; // places objects randomly
+    static inline float m_RandomRotX[2], m_RandomRotY[2], m_RandomRotZ[2]; // min max rotations
+
+    static inline ContextMenu m_ContextMenu; // right click context menu
+    static inline PopupMenu m_PopupMenu; // center screen popup menus
     static inline ResourceStore m_favData{ "favourites", eResourceType::TYPE_TEXT };
-    static inline bool m_bShowPopup;
-    static inline std::string m_popupTitle;
-    static inline std::function<void()> m_pPopupFunc;
-    static inline bool m_bIsInputLocked; // Input locked by some imgui widgets
-
-    static struct Browser
-    {
-    private:
-        static inline size_t m_nSelected = NULL;
-
-    public:
-        static inline bool m_bShowNextFrame;
-        static inline bool m_bShown;
-
-        static size_t GetSelected();
-        static void SetSelected(int modelId);
-    };
+    
 
     Interface() = delete;
     Interface(Interface&) = delete;
+    
+    // Initiazes stuff for MapEditor open
+    static void Init();
 
-    static void DrawMainMenuBar();
-    static void DrawInfoMenu();
-    static void DrawPopupMenu();
-    static void ImportMenu();
-    static void ExportMenu();
-    static void SettingsMenu();
+    // Needs to be called each frame
+    static void Process();
 
-    // Custom popup menu codes
-    static void QuickObjectCreateMenu();
-    static void AboutEditorMenu();
-    static void WelcomeMenu();
-    static void EditorControls();
-    static void UpdateFoundMenu();
+    // Cleans stuff on MapEditor exit
+    static void Cleanup();
 
-    static void ProcessContextMenu();
-    static void SearchContextMenu(std::string& root, std::string& key, std::string& value);
+    // process right click context menu
+    static void DrawContextMenu();
 };
 

@@ -9,44 +9,27 @@
 #include <CMenuManager.h>
 #include "filemgr.h"
 
+bool Editor::IsOpen()
+{
+    return m_bOpened;
+}
+
 void Editor::Init()
 {
-    D3dHook::InjectHook(&DrawWindow);
+    D3dHook::InjectHook(&Draw);
     ApplyStyle();
     Updater::CheckUpdate();
 
     // Load config data
-    Interface::m_bAutoSave = gConfig.GetValue("editor.autoSave", true);
-    Interface::m_bAutoTpToLoc = gConfig.GetValue("editor.autoTpToLoc", false);
-    Interface::m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true);
-    Interface::m_bShowInfoMenu = gConfig.GetValue("editor.showInfoMenu", true);
-    Interface::m_bFramerate = gConfig.GetValue("editor.showFPS", false);
-    ObjManager::m_bDrawBoundingBox = gConfig.GetValue("editor.drawBoundingBox", true);
-    ObjManager::m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
-    Viewport::m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);
-    Interface::m_bWelcomeScreenDisplayed = gConfig.GetValue("editor.welcomeDisplayed", false);
-    Viewport::m_nMul = gConfig.GetValue("editor.moveSpeed", 1.0f);
+    Viewport::m_nMoveSpeed = gConfig.GetValue("editor.moveSpeed", 1.0f);
     FontMgr::SetMultiplier(gConfig.GetValue("editor.fontMul", 1.0f));
-
-    if (!Interface::m_bWelcomeScreenDisplayed)
-    {
-        Interface::m_bShowPopup = true;
-        Interface::m_popupTitle = "Map Editor";
-        Interface::m_pPopupFunc = Interface::WelcomeMenu;
-        Interface::m_bWelcomeScreenDisplayed = true;
-        gConfig.SetValue("editor.welcomeDisplayed", Interface::m_bWelcomeScreenDisplayed);
-    }
+    Interface::Init();
 
     Events::processScriptsEvent += []()
     {
-        if (Editor::m_bShowEditor)
-        {
-            Viewport::Process();
-        }
-
         if (toggleUIKey.Pressed())
         {
-            Editor::m_bShowGUI = !Editor::m_bShowGUI;
+            Interface::Interface::m_bShowGUI = !Interface::Interface::m_bShowGUI;
         }
 
         if (copyHoveredObjName.Pressed())
@@ -56,11 +39,11 @@ void Editor::Init()
             CHud::SetHelpMessage("Copied to clipboard", false, false, false);
         }
 
-        if (editorOpenKey.Pressed() && !Interface::m_bIsInputLocked)
+        if (editorOpenKey.Pressed() && !Interface::m_bInputLocked)
         {
-            Editor::m_bShowEditor = !Editor::m_bShowEditor;
+            m_bOpened = !m_bOpened;
 
-            if (Editor::m_bShowEditor)
+            if (m_bOpened)
             {
                 if (Interface::m_bAutoTpToLoc)
                 {
@@ -84,45 +67,32 @@ void Editor::Init()
 
     Events::shutdownRwEvent += []()
     {
-       gConfig.WriteToDisk();
+        gConfig.WriteToDisk();
     };
 };
 
 void Editor::Cleanup()
 {
-    Viewport::m_eViewportMode = EDIT_MODE;
-    Interface::Browser::m_bShown = false;
-    Interface::Browser::m_bShowNextFrame = false;
     D3dHook::SetMouseState(false);
     gConfig.WriteToDisk();
-    Viewport::Shutdown();
+    Viewport::Cleanup();
 }
 
-void Editor::DrawWindow()
+void Editor::Draw()
 {
     static bool bTriedtoHideCursor;
     if (!FrontEndMenuManager.m_bMenuActive)
     {
-        if (Editor::m_bShowEditor)
+        if (m_bOpened)
         {
-            if (Viewport::m_eViewportMode == EDIT_MODE)
+            if (Viewport::m_eState == eViewportState::Edit)
             {
                 D3dHook::SetMouseState(true);
                 bTriedtoHideCursor = false;
             }
-            Interface::m_bIsInputLocked = false;
+            Interface::m_bInputLocked = false;
 
-            if (m_bShowGUI)
-            {
-                Interface::DrawMainMenuBar();
-                Viewport::DrawOverlay();
-                Viewport::ProcessSelectedObjectInputs();
-                Interface::DrawPopupMenu();
-                Interface::DrawInfoMenu();
-                Viewport::DrawHoverMenu();
-            }
-
-            if (Interface::m_bAutoSave && ObjManager::m_pVecEntities.size() > 0)
+            if (Interface::m_bAutoSave && ObjManager::m_pPlacedObjs.size() > 0)
             {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
@@ -133,6 +103,8 @@ void Editor::DrawWindow()
                     timer = curTimer;
                 }
             }
+            Interface::Process();
+            Viewport::Process();
         }
     }
     else

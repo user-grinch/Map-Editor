@@ -1,64 +1,86 @@
 #pragma once
 #include "plugin.h"
-#define PLAYER_Z_OFFSET 0.0f
-#define MOUSE_FACTOR_X 13.0f
-#define MOUSE_FACTOR_Y 6.0f
 
-enum VIEWPORT_STATE
+enum class eViewportState
 {
-    EDIT_MODE,
-    VIEW_MODE,
-    OBJECT_VIEW_MODE,
+    Edit,
+    View,
+    Browser,
 };
 
 class Viewport
 {
 private:
-    static inline bool m_bInitialized;
-    static inline CVector m_fTotalMouse; // stores the mouse position
-    static inline BYTE m_bHudState; // backup for Shutdown()
-    static inline BYTE m_bRadarState; // backup for Shutdown()
-    static inline bool m_bNeverWanted; // backup for Shutdown()
+    static inline bool m_bInitialized; // Is the viewport init done
+    static inline ImVec2 m_fSize; // Size of the viewport
+    static inline CVector m_fMousePos; // Mouse position in the viewport
 
     // To allow updating camera position externally
-    static inline CVector m_fCameraPos;
-    static inline bool m_bCameraPosWasUpdated;
+    static inline CVector m_fCamPos;
+    static inline bool m_bCamUpdated;
 
-    static void LoadNewClump(int model, RpClump *&pClump, RpAtomic *&pAtomic, RwFrame *&pFrame);
-    static void RenderObjectBrowserModel();
+    // Processes the right click context menu
+    static void DrawContextMenu();
+
+    // The object hover menu. Shows object model, name & type
+    static void DrawHoverMenu();
+
+    // Creates a transparent layer over the viewport
+    // Used for inputs and context menu creation
+    static void DrawOverlay();
+
+    // Processes input for the currently selected object
+    // TODO: Should be in ObjManager class?
+    static void ProcessInputs();
 
 public:
-    static inline float m_nRenderScale = 1.0f; // ObjectBrowser object render scale
-    static inline bool m_bShowContextMenu;
-    static inline bool m_bShowHoverMenu; // tooltup menu showing info on hover
-    static inline bool m_bBeingHovered;
-    static inline VIEWPORT_STATE m_eViewportMode = EDIT_MODE;
-    static inline int m_nMul = 1; // movement speed multiplier for viewport realted controls
-    static inline float m_fFOV = 70.0f; // camera field of view
-    static inline CVector m_vecWorldPos;
-    static inline CEntity *m_HoveredEntity;
-    static inline CVector m_vecRenderRot;
-    static inline bool m_bObjBrowserAutoRot;
-    static inline ImVec2 m_fViewportSize;
-    struct COPY_MODEL
+    static inline eViewportState m_eState = eViewportState::Edit;
+    static inline bool m_bHovered; // Is mouse hovering viewport
+    static inline CEntity *m_HoveredEntity; // Currently hovered entity
+    static inline int m_nMoveSpeed = 1; // movement speed multiplier controls
+    static inline float m_fFOV = 70.0f;
+    static inline CVector m_fWorldPos; // cursor world position
+
+    struct Browser
     {
-        static inline int m_nModel;
-        static inline CVector m_vecRot;
+    private:
+        static inline size_t m_nSelectedID = NULL; // Selected model id
+        static inline CVector m_fRot; // rotation of the rendering object
+
+        // Loads model
+        // TODO: Need some fail checks
+        static void LoadModel(size_t model, RpClump *&pClump, RpAtomic *&pAtomic, RwFrame *&pFrame);
+        
+        // Renders the model in viewport
+        static void RenderModel();
+    public:
+        static inline bool m_bShowNextFrame; // Should the browser be shown next frame
+        static inline bool m_bShown; // Is the browser being shown
+        static inline bool m_bAutoRot; // Auto rotate object in browser
+
+        static inline float m_fScale = 1.0f; // ObjectBrowser object render scale
+
+        static size_t GetSelected();
+        static void Process();
+        static void SetSelected(int modelId);
     };
 
     Viewport() = delete;
     Viewport(Viewport&) = delete;
 
+
+    // Initiazes stuff for MapEditor open
     static void Init();
-    static void DrawHoverMenu();
-    /*
-    * Creates a transparent overlay over the viewport
-    * Used for inputs and context menu creation
-    */
-    static void DrawOverlay();
+
+    // Needs to be called each frame
     static void Process();
-    static void ProcessContextMenu();
-    static void ProcessSelectedObjectInputs();
+
+    // Cleans stuff on MapEditor exit
+    static void Cleanup();
+
+    // Returns the size of the viewport
+    static ImVec2 GetSize();
+
+    // Allows changing camera position externally
     static void SetCameraPosn(const CVector &pos);
-    static void Shutdown();
 };

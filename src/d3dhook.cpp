@@ -60,7 +60,7 @@ void D3dHook::ProcessFrame(void* ptr)
         ImVec2 size(screen::GetScreenWidth(), screen::GetScreenHeight());
         if ((fScreenSize.x != size.x && fScreenSize.y != size.y) || FontMgr::IsReloadNeeded())
         {
-            if (gRenderer == Render_DirectX9)
+            if (gRenderer == eRenderer::DirectX9)
             {
                 ImGui_ImplDX9_InvalidateDeviceObjects();
             }
@@ -85,7 +85,7 @@ void D3dHook::ProcessFrame(void* ptr)
         }
 
         ImGui_ImplWin32_NewFrame();
-        if (gRenderer == Render_DirectX9)
+        if (gRenderer == eRenderer::DirectX9)
         {
             ImGui_ImplDX9_NewFrame();
         }
@@ -104,7 +104,7 @@ void D3dHook::ProcessFrame(void* ptr)
         ImGui::EndFrame();
         ImGui::Render();
 
-        if (gRenderer == Render_DirectX9)
+        if (gRenderer == eRenderer::DirectX9)
         {
             ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
         }
@@ -122,7 +122,7 @@ void D3dHook::ProcessFrame(void* ptr)
         patch::Nop(0x00531155, 5); // shift trigger fix
 #endif
 
-        if (gRenderer == Render_DirectX9)
+        if (gRenderer == eRenderer::DirectX9)
         {
             ImGui_ImplDX9_Init(reinterpret_cast<IDirect3DDevice9*>(ptr));
         }
@@ -216,7 +216,6 @@ void D3dHook::ProcessMouse()
         }
         else
         {
-
             patch::SetUChar(BY_GAME(0x6194A0, 0x6020A0, 0x580D20), BY_GAME(0xE9, 0x53, 0x53));
 #ifdef GTASA
             patch::SetRaw(0x541DD7, (char*)"\xE8\xE4\xD5\xFF\xFF", 5);
@@ -256,7 +255,7 @@ bool D3dHook::InjectHook(void *pCallback)
     */
     if (init(kiero::RenderType::D3D9) == kiero::Status::Success)
     {
-        gRenderer = Render_DirectX9;
+        gRenderer = eRenderer::DirectX9;
         kiero::bind(16, (void**)&oReset, hkReset);
         kiero::bind(42, (void**)&oEndScene, hkEndScene);
         pCallbackFunc = pCallback;
@@ -267,7 +266,7 @@ bool D3dHook::InjectHook(void *pCallback)
 
         if (init(kiero::RenderType::D3D11) == kiero::Status::Success)
         {
-            gRenderer = Render_DirectX11;
+            gRenderer = eRenderer::DirectX11;
             kiero::bind(8, (void**)&oPresent, hkPresent);
             pCallbackFunc = pCallback;
             hookInjected = true;

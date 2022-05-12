@@ -46,7 +46,7 @@ void FileMgr::ImportIDE(std::string path, bool logImports)
                 }
 
                 ObjManager::m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
-                ObjManager::totalIDELinesLoaded++;
+                ObjManager::m_nTotalIDELine++;
             }
         }
     }
@@ -80,7 +80,7 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports)
                 gLog << "Pasing line: " << line << std::endl;
             }
 
-            int hObj; 
+            int hObj;
             Command<Commands::REQUEST_MODEL>(model);
             Command<Commands::LOAD_ALL_MODELS_NOW>();
             Command<Commands::CREATE_OBJECT>(model, pos.x, pos.y, pos.z, &hObj);
@@ -108,7 +108,7 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports)
             // Setting quat messes with z coord?
             Command<Commands::SET_OBJECT_COORDINATES>(hObj, pos.x, pos.y, pos.z);
             Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
-            ObjManager::m_pVecEntities.push_back(CPools::GetObject(hObj));
+            ObjManager::m_pPlacedObjs.push_back(CPools::GetObject(hObj));
         }
     }
     CHud::SetHelpMessage("IPL imported", false, false, false);
@@ -119,7 +119,7 @@ void FileMgr::ExportIPL(const char* fileName)
     std::fstream file;
     file.open(std::string(PLUGIN_PATH((char*)"MapEditor/")) + fileName, std::ios::out);
     file << "# Generated using Map Editor by Grinch_\ninst" << std::endl;
-    for (CObject *pObj : ObjManager::m_pVecEntities)
+    for (CObject *pObj : ObjManager::m_pPlacedObjs)
     {
         int model = pObj->m_nModelIndex;
         auto &data = ObjManager::m_objData.Get(pObj);

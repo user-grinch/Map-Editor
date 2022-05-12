@@ -6,12 +6,14 @@ void EditorThread(void* param)
 {
     ObjManager::Init();
     Updater::CheckUpdate();
-     /* 
-        Wait for game init
-        Doing it like this doesn't prevent you to attach debugger
-    */ 
+
+    /*
+       Wait for game init
+       Sleep() bugs when debugger is attached
+    */
     static bool gameStarted = false;
-    Events::processScriptsEvent +=[]{
+    Events::initGameEvent +=[]
+    {
         gameStarted = true;
     };
 

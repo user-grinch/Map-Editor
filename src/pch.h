@@ -42,14 +42,29 @@
 #include "../depend/imgui/imgui.h"
 
 using namespace plugin;
+typedef std::function<void(std::string&, std::string&, std::string&)> f_Arg3;
 
-enum eRenderer
+enum class eRenderer
 {
-    Render_DirectX9,
-    Render_DirectX11,
-    Render_Unknown
+    DirectX9,
+    DirectX11,
+    Unknown
 };
 
-static eRenderer gRenderer = Render_Unknown;
+struct ContextMenu
+{
+    bool m_bShow;
+    f_Arg3 m_pFunc;
+    std::string m_Root, m_Key, m_Val;
+};
+
+struct PopupMenu
+{
+    bool m_bShow;
+    std::string m_Title;
+    std::function<void()> m_pFunc;
+};
+
+static eRenderer gRenderer = eRenderer::Unknown;
 extern std::ofstream gLog;
 extern CJson gConfig;

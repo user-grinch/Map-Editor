@@ -13,27 +13,7 @@
 #include <filesystem>
 #include <CStreaming.h>
 
-size_t Interface::Browser::GetSelected()
-{
-    return m_nSelected;
-}
-
-void Interface::Browser::SetSelected(int modelId)
-{
-    /*
-        Check if the model is available first!
-        If not set model to -1
-    */
-    if (modelId > 0 && Command<Commands::IS_MODEL_IN_CDIMAGE>(modelId))
-    {
-        CStreaming::RequestModel(modelId, PRIORITY_REQUEST);
-        CStreaming::LoadAllRequestedModels(true);
-    }
-    
-    m_nSelected = Command<Commands::IS_MODEL_AVAILABLE>(modelId) ? modelId : NULL;
-}
-
-void Interface::SearchContextMenu(std::string& root, std::string& key, std::string& value)
+void ContextMenu_Search(std::string& root, std::string& key, std::string& value)
 {
     if (ImGui::MenuItem("Add to favourites"))
     {
@@ -46,33 +26,13 @@ void Interface::SearchContextMenu(std::string& root, std::string& key, std::stri
 
     if (ImGui::MenuItem("Copy"))
     {
-        Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+        ObjManager::ClipBoard::m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     };
 }
 
-void Interface::ProcessContextMenu()
-{
-    if (m_contextMenu.function != nullptr)
-    {
-        if (ImGui::BeginPopupContextWindow("TMenu"))
-        {
-            ImGui::Text(m_contextMenu.key.c_str());
-            ImGui::Separator();
 
-            m_contextMenu.function(m_contextMenu.rootKey, m_contextMenu.key, m_contextMenu.value);
-
-            if (ImGui::MenuItem("Close"))
-            {
-                m_contextMenu.function = nullptr;
-            }
-
-            ImGui::EndPopup();
-        }
-    }
-}
-
-void Interface::ImportMenu()
+void ImportPopup()
 {
     std::filesystem::path path = PLUGIN_PATH((char*)"/MapEditor/");
     if (std::filesystem::exists(path))
@@ -86,23 +46,24 @@ void Interface::ImportMenu()
         ImGui::Dummy(ImVec2(0, 20));
         static std::string selectedFileName = "";
 
+        static bool logImports;
         ImGui::Checkbox("Log imports", &logImports);
         Widgets::ShowTooltip("Logs imports line by line in MapEditor.log.\nEnable this if the game crashes while importing\nand you want to know the error line.\n\nNote: Has performance impact!");
 
         if (ImGui::Button("Import IPL", Utils::GetSize(2)))
         {
             FileMgr::ImportIPL(selectedFileName.c_str(), logImports);
-            m_bShowPopup = false;
+            Interface::m_PopupMenu.m_bShow = false;
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear placed objects", Utils::GetSize(2)))
         {
-            for (auto &pObj : ObjManager::m_pVecEntities)
+            for (auto &pObj : ObjManager::m_pPlacedObjs)
             {
                 pObj->Remove();
             }
             ObjManager::m_pSelected = nullptr;
-            ObjManager::m_pVecEntities.clear();
+            ObjManager::m_pPlacedObjs.clear();
             CHud::SetHelpMessage("Current objects cleared", false, false, false);
         }
         ImGui::Spacing();
@@ -131,7 +92,7 @@ void Interface::ImportMenu()
     }
 }
 
-void Interface::ExportMenu()
+void ExportPopup()
 {
     ImGui::Spacing();
     ImGui::Text("Notes,");
@@ -144,7 +105,7 @@ void Interface::ExportMenu()
     ImGui::InputTextWithHint("File name##Buffer", "ProjectProps.ipl", buffer, ARRAYSIZE(buffer));
     if (ImGui::IsItemActive())
     {
-        m_bIsInputLocked = true;
+        Interface::m_bInputLocked = true;
     }
     ImGui::Spacing();
     if (ImGui::Button("Export IPL", Utils::GetSize()))
@@ -154,104 +115,66 @@ void Interface::ExportMenu()
             strcpy(buffer, "ProjectProps.ipl");
         }
         FileMgr::ExportIPL(buffer);
-        m_bShowPopup = false;
+        Interface::m_PopupMenu.m_bShow = false;
     }
 }
 
-void Interface::WelcomeMenu()
+
+void UpdateFoundPopup()
 {
-    ImGui::Spacing();
-    if (ImGui::Button("Discord", ImVec2(Utils::GetSize(3))))
+    if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
     {
         ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Controls", Utils::GetSize(3)))
+    if (ImGui::Button("Downlod page", Utils::GetSize(2)))
     {
-        m_popupTitle = "Controls";
-        m_pPopupFunc = EditorControls;
+        ShellExecute(NULL, "open", "https://github.com/user-grinch/Map-Editor/", NULL, NULL, SW_SHOWNORMAL);
     }
-    ImGui::SameLine();
-    if (ImGui::Button("About page", Utils::GetSize(3)))
-    {
-        m_popupTitle = "About";
-        m_pPopupFunc = AboutEditorMenu;
-    }
-    ImGui::Dummy(ImVec2(0, 20));
-    if (ImGui::BeginChild("WelcomeScreen"))
-    {
-        Widgets::CenterdText("Welcome to Map Editor");
-        Widgets::CenterdText(std::string("v") + EDITOR_VERSION);
-        Widgets::CenterdText(std::string("(") + BUILD_NUMBER + ")");
-        ImGui::Dummy(ImVec2(0, 10));
+    ImGui::Spacing();
+    Widgets::CenterdText("Current version: " EDITOR_VERSION);
+    Widgets::CenterdText("Latest version: " + Updater::GetUpdateVersion());
+    ImGui::Dummy(ImVec2(0,20));
 
-        ImGui::TextWrapped("Click on the `Controls` button to get started. If you have suggestions let me know on Discord.");
-        ImGui::Dummy(ImVec2(0, 10));
-        ImGui::TextWrapped("Before you go ahead and spam me with bug reports, keep in mind this is a alpha release, not even beta! Do some reasearch if the bug was already reported or not. Try on a FRESH GAME first. I'm NOT fixing bugs with X camera mod or Y graphics mod.");
-        ImGui::Dummy(ImVec2(0, 10));
-        ImGui::TextWrapped("Partial modloader support has been implemented. Create a folder called 'MapEditor' in modloader folder and put your map mods there.");
-        ImGui::Dummy(ImVec2(0, 30));
-        ImGui::Text("Please note,");
-        ImGui::TextWrapped("1. You are NOT allowed to reupload this modifiction.");
-        ImGui::TextWrapped("2. If you're posting it somewhere, link to the official source.");
-        ImGui::TextWrapped("3. This can be ignored by getting permission from the author.");
-        ImGui::Dummy(ImVec2(0, 10));
-        Widgets::CenterdText("Copyright Grinch_ 2021-2022. All rights reserved");
-        ImGui::EndChild();
-    }
+    ImGui::TextWrapped("A newer version of Map Editor is available with,");
+    ImGui::Text("1. New features\n2. Bug fixes\n3. Improvements");
+    ImGui::Spacing();
+    ImGui::TextWrapped("Click on the `Download page` button and follow the instructions there to update.");
 }
 
-void Interface::QuickObjectCreateMenu()
+void AboutEditorPopup()
 {
-    static int modelId = DEFAULT_MODEL_ID;
-    static std::string modelName = ObjManager::FindNameFromModel(modelId);
-
-    ImGui::Text("Name: %s", modelName.c_str());
-    if (ImGui::InputInt("Model", &modelId))
+    if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
     {
-        modelName = ObjManager::FindNameFromModel(modelId);
-    }
-    if (KeyPressed(VK_RETURN))
-    {
-        goto create_object;
-    }
-
-    ImGui::Spacing();
-    if (ImGui::Button("Create", Utils::GetSize(2)))
-    {
-create_object:
-        int hObj;
-        Command<Commands::REQUEST_MODEL>(modelId);
-        Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(modelId, Viewport::m_vecWorldPos.x,
-                                         Viewport::m_vecWorldPos.y, Viewport::m_vecWorldPos.z, &hObj);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(modelId);
-
-        CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjManager::m_objData.Get(pEntity);
-        data.m_modelName = modelName;
-
-        ObjManager::m_pVecEntities.push_back(pEntity);
-        ObjManager::m_pSelected = pEntity;
-
-        Interface::m_bShowPopup = false;
+        ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Find models", Utils::GetSize(2)))
+    if (ImGui::Button("Check update", Utils::GetSize(2)))
     {
-        ShellExecute(NULL, "open", "https://dev.prineside.com/en/gtasa_samp_model_id/", NULL, NULL, SW_SHOWNORMAL);
+        Updater::CheckUpdate();
     }
     ImGui::Spacing();
-    if (ImGui::Button("Open object browser", Utils::GetSize()))
-    {
-        Viewport::m_eViewportMode = OBJECT_VIEW_MODE;
-        Interface::m_bShowPopup = false;
-        Interface::m_bShowPopup = false;
-        Interface::Browser::m_bShowNextFrame = true;
-    }
+    ImGui::Columns(2, NULL, false);
+    ImGui::Text(EDITOR_NAME);
+    ImGui::Text("Version: %s", EDITOR_VERSION);
+    ImGui::Dummy(ImVec2(0.0f, 20.0f));
+    ImGui::Text("Credits:");
+    ImGui::Text("1. Plugin SDK");
+    ImGui::Text("3. ImGui");
+    ImGui::NextColumn();
+    ImGui::Text("Author: Grinch_");
+    ImGui::Text("Build: %s", BUILD_NUMBER);
+    ImGui::Dummy(ImVec2(0.0f, 20.0f));
+    ImGui::Text("-");
+    ImGui::Text("2. MTA");
+    ImGui::Columns(1);
+    ImGui::Dummy(ImVec2(0.0f, 20.0f));
+    ImGui::TextWrapped("You are not allowed to reupload this modification without explicit permission from the author! You have to link to the official source.");
+    ImGui::Dummy(ImVec2(0.0f, 30.0f));
+    Widgets::CenterdText("Copyright Grinch_ 2021-2022. All rights reserved");
 }
 
-void Interface::EditorControls()
+void ControlsPopup()
 {
     if (ImGui::BeginChild("Controls"))
     {
@@ -423,48 +346,116 @@ void Interface::EditorControls()
     }
 }
 
-void Interface::AboutEditorMenu()
+void WelcomePopup()
 {
-    if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
+    ImGui::Spacing();
+    if (ImGui::Button("Discord", ImVec2(Utils::GetSize(3))))
     {
         ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Check update", Utils::GetSize(2)))
+    if (ImGui::Button("Controls", Utils::GetSize(3)))
     {
-        Updater::CheckUpdate();
+        Interface::m_PopupMenu.m_Title = "Controls";
+        Interface::m_PopupMenu.m_pFunc = ControlsPopup;
     }
-    ImGui::Spacing();
-    ImGui::Columns(2, NULL, false);
-    ImGui::Text(EDITOR_NAME);
-    ImGui::Text("Version: %s", EDITOR_VERSION);
-    ImGui::Dummy(ImVec2(0.0f, 20.0f));
-    ImGui::Text("Credits:");
-    ImGui::Text("1. Plugin SDK");
-    ImGui::Text("3. ImGui");
-    ImGui::NextColumn();
-    ImGui::Text("Author: Grinch_");
-    ImGui::Text("Build: %s", BUILD_NUMBER);
-    ImGui::Dummy(ImVec2(0.0f, 20.0f));
-    ImGui::Text("-");
-    ImGui::Text("2. MTA");
-    ImGui::Columns(1);
-    ImGui::Dummy(ImVec2(0.0f, 20.0f));
-    ImGui::TextWrapped("You are not allowed to reupload this modification without explicit permission from the author! You have to link to the official source.");
-    ImGui::Dummy(ImVec2(0.0f, 30.0f));
-    Widgets::CenterdText("Copyright Grinch_ 2021-2022. All rights reserved");
+    ImGui::SameLine();
+    if (ImGui::Button("About page", Utils::GetSize(3)))
+    {
+        Interface::m_PopupMenu.m_Title = "About";
+        Interface::m_PopupMenu.m_pFunc = AboutEditorPopup;
+    }
+    ImGui::Dummy(ImVec2(0, 20));
+    if (ImGui::BeginChild("WelcomeScreen"))
+    {
+        Widgets::CenterdText("Welcome to Map Editor");
+        Widgets::CenterdText(std::string("v") + EDITOR_VERSION);
+        Widgets::CenterdText(std::string("(") + BUILD_NUMBER + ")");
+        ImGui::Dummy(ImVec2(0, 10));
+
+        ImGui::TextWrapped("Click on the `Controls` button to get started. If you have suggestions let me know on Discord.");
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::TextWrapped("Before you go ahead and spam me with bug reports, keep in mind this is a alpha release, not even beta! Do some reasearch if the bug was already reported or not. Try on a FRESH GAME first. I'm NOT fixing bugs with X camera mod or Y graphics mod.");
+        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::TextWrapped("Partial modloader support has been implemented. Create a folder called 'MapEditor' in modloader folder and put your map mods there.");
+        ImGui::Dummy(ImVec2(0, 30));
+        ImGui::Text("Please note,");
+        ImGui::TextWrapped("1. You are NOT allowed to reupload this modifiction.");
+        ImGui::TextWrapped("2. If you're posting it somewhere, link to the official source.");
+        ImGui::TextWrapped("3. This can be ignored by getting permission from the author.");
+        ImGui::Dummy(ImVec2(0, 10));
+        Widgets::CenterdText("Copyright Grinch_ 2021-2022. All rights reserved");
+        ImGui::EndChild();
+    }
+}
+
+
+void Interface::Init()
+{
+    m_bAutoSave = gConfig.GetValue("editor.autoSave", true);
+    m_bAutoTpToLoc = gConfig.GetValue("editor.autoTpToLoc", false);
+    m_bAutoSnapToGround = gConfig.GetValue("editor.autoSnap", true);
+     m_bDrawAxisLines = gConfig.GetValue("editor.drawAxisLines", true);
+    m_bDrawBoundingBox = gConfig.GetValue("editor.drawBoundingBox", true);
+    m_bShowFPS = gConfig.GetValue("editor.showFPS", false);
+    m_bShowHoverMenu = gConfig.GetValue("editor.showHoverMenu", true);
+    m_bShowSidepanel = gConfig.GetValue("editor.showInfoMenu", true);
+    m_bWelcomeShown = gConfig.GetValue("editor.welcomeDisplayed", false);
+    
+    if (!m_bWelcomeShown)
+    {
+        m_PopupMenu.m_bShow = true;
+        m_PopupMenu.m_Title = "Map Editor";
+        m_PopupMenu.m_pFunc = WelcomePopup;
+        m_bWelcomeShown = true;
+        gConfig.SetValue("editor.welcomeDisplayed", m_bWelcomeShown);
+    }
+}
+
+void Interface::Process()
+{
+    if (m_bShowGUI)
+    {
+        DrawMainMenuBar();
+        DrawPopupMenu();
+        DrawSidepanel();
+    }
+}
+
+void Interface::DrawContextMenu()
+{
+    if (m_ContextMenu.m_bShow)
+    {
+        if (ImGui::BeginPopupContextWindow("ContextMenu"))
+        {
+            if (m_ContextMenu.m_Key != "")
+            {
+                ImGui::Text(m_ContextMenu.m_Key.c_str());
+                ImGui::Separator();
+            }
+
+            m_ContextMenu.m_pFunc(m_ContextMenu.m_Root, m_ContextMenu.m_Key, m_ContextMenu.m_Val);
+
+            if (ImGui::MenuItem("Close"))
+            {
+                m_ContextMenu.m_bShow = false;
+            }
+
+            ImGui::EndPopup();
+        }
+    }
 }
 
 void Interface::DrawPopupMenu()
 {
     if (Updater::IsUpdateAvailable())
     {
-        m_bShowPopup = true;
-        m_popupTitle = "Update available!";
-        m_pPopupFunc = UpdateFoundMenu;
+        m_PopupMenu.m_bShow = true;
+        m_PopupMenu.m_Title = "Update available!";
+        m_PopupMenu.m_pFunc = UpdateFoundPopup;
     }
 
-    if (!m_bShowPopup)
+    if (!m_PopupMenu.m_bShow)
     {
         return;
     }
@@ -475,20 +466,20 @@ void Interface::DrawPopupMenu()
     ImGui::SetNextWindowSizeConstraints(ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95), // manually tested
                                         ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95));
 
-    ImGui::SetNextWindowPos(ImVec2((Viewport::m_fViewportSize.x - prevSize.x)/2,
-                                   (Viewport::m_fViewportSize.y - prevSize.y)/2), ImGuiCond_Always);
-    if (ImGui::Begin(m_popupTitle.c_str(), &m_bShowPopup, flags))
+    ImVec2 size = Viewport::GetSize();
+    ImGui::SetNextWindowPos(ImVec2((size.x - prevSize.x)/2, (size.y - prevSize.y)/2), ImGuiCond_Always);
+    if (ImGui::Begin(m_PopupMenu.m_Title.c_str(), &m_PopupMenu.m_bShow, flags))
     {
-        if (m_pPopupFunc)
+        if (m_PopupMenu.m_pFunc)
         {
-            m_pPopupFunc();
+            m_PopupMenu.m_pFunc();
         }
         prevSize = ImGui::GetWindowSize();
         ImGui::End();
     }
 
     // Reset state on window close
-    if (Updater::IsUpdateAvailable() && !m_pPopupFunc)
+    if (Updater::IsUpdateAvailable() && !m_PopupMenu.m_pFunc)
     {
         Updater::ResetUpdaterState();
     }
@@ -502,7 +493,7 @@ void Interface::DrawMainMenuBar()
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        if(Viewport::m_eViewportMode == EDIT_MODE)
+        if(Viewport::m_eState == eViewportState::Edit)
         {
             ImGui::Text("Edit Mode");
         }
@@ -513,8 +504,8 @@ void Interface::DrawMainMenuBar()
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        
-        if (Interface::m_bFramerate)
+
+        if (Interface::m_bShowFPS)
         {
             ImGui::Text("Framerate: %0.1f", ImGui::GetIO().Framerate);
             ImGui::Spacing();
@@ -526,15 +517,15 @@ void Interface::DrawMainMenuBar()
         {
             if (ImGui::MenuItem("Export"))
             {
-                m_bShowPopup = true;
-                m_popupTitle = "Export to IPL";
-                m_pPopupFunc = ExportMenu;
+                m_PopupMenu.m_bShow = true;
+                m_PopupMenu.m_Title = "Export to IPL";
+                m_PopupMenu.m_pFunc = ExportPopup;
             }
             if (ImGui::MenuItem("Import"))
             {
-                m_bShowPopup = true;
-                m_popupTitle = "Import from IPL";
-                m_pPopupFunc = ImportMenu;
+                m_PopupMenu.m_bShow = true;
+                m_PopupMenu.m_Title = "Import from IPL";
+                m_PopupMenu.m_pFunc = ImportPopup;
             }
             ImGui::EndMenu();
         }
@@ -565,7 +556,7 @@ void Interface::DrawMainMenuBar()
                 {
                     patch::SetRaw(0x52CF10, (char*)"\x56\x8B", 2);
                 }
-            }          
+            }
             if (ImGui::MenuItem("No pedstrain", NULL, &bNoPeds))
             {
                 if (bNoPeds)
@@ -661,25 +652,25 @@ void Interface::DrawMainMenuBar()
         }
         if (ImGui::BeginMenu("View"))
         {
-            if (ImGui::MenuItem("Axis lines", NULL, &ObjManager::m_bDrawAxisLines))
+            if (ImGui::MenuItem("Axis lines", NULL, &m_bDrawAxisLines))
             {
-                gConfig.SetValue("editor.drawAxisLines", ObjManager::m_bDrawAxisLines);
+                gConfig.SetValue("editor.drawAxisLines", m_bDrawAxisLines);
             }
-            if (ImGui::MenuItem("Bounding box", NULL, &ObjManager::m_bDrawBoundingBox))
+            if (ImGui::MenuItem("Bounding box", NULL, &m_bDrawBoundingBox))
             {
-                gConfig.SetValue("editor.drawBoundingBox", ObjManager::m_bDrawBoundingBox);
+                gConfig.SetValue("editor.drawBoundingBox", m_bDrawBoundingBox);
             }
-            if (ImGui::MenuItem("Framerate", NULL, &Interface::m_bFramerate))
+            if (ImGui::MenuItem("Framerate", NULL, &m_bShowFPS))
             {
-                gConfig.SetValue("editor.showFPS", Interface::m_bFramerate);
+                gConfig.SetValue("editor.showFPS", m_bShowFPS);
             }
-            if (ImGui::MenuItem("Hover tooltip", NULL, &Viewport::m_bShowHoverMenu))
+            if (ImGui::MenuItem("Hover tooltip", NULL, &m_bShowHoverMenu))
             {
-                gConfig.SetValue("editor.showHoverMenu", Viewport::m_bShowHoverMenu);
+                gConfig.SetValue("editor.showHoverMenu", m_bShowHoverMenu);
             }
-            if (ImGui::MenuItem("Info panel", NULL, &m_bShowInfoMenu))
+            if (ImGui::MenuItem("Info panel", NULL, &m_bShowSidepanel))
             {
-                gConfig.SetValue("editor.showInfoMenu", m_bShowInfoMenu);
+                gConfig.SetValue("editor.showInfoMenu", m_bShowSidepanel);
             }
             ImGui::EndMenu();
         }
@@ -687,22 +678,22 @@ void Interface::DrawMainMenuBar()
         {
             if (ImGui::MenuItem("Welcome screen", NULL))
             {
-                m_bShowPopup = true;
-                m_popupTitle = "Map Editor";
-                m_pPopupFunc = WelcomeMenu;
+                m_PopupMenu.m_bShow = true;
+                m_PopupMenu.m_Title = "Map Editor";
+                m_PopupMenu.m_pFunc = WelcomePopup;
             }
             if (ImGui::MenuItem("Controls", NULL))
             {
-                m_bShowPopup = true;
-                m_popupTitle = "Map Editor Controls";
-                m_pPopupFunc = EditorControls;
+                m_PopupMenu.m_bShow = true;
+                m_PopupMenu.m_Title = "Map Editor Controls";
+                m_PopupMenu.m_pFunc = ControlsPopup;
             }
 
             if (ImGui::MenuItem("About Map Editor", NULL))
             {
-                m_bShowPopup = true;
-                m_popupTitle = "About";
-                m_pPopupFunc = AboutEditorMenu;
+                m_PopupMenu.m_bShow = true;
+                m_PopupMenu.m_Title = "About";
+                m_PopupMenu.m_pFunc = AboutEditorPopup;
             }
             ImGui::EndMenu();
         }
@@ -710,9 +701,9 @@ void Interface::DrawMainMenuBar()
     }
 }
 
-void Interface::DrawInfoMenu()
+void Interface::DrawSidepanel()
 {
-    if (!m_bShowInfoMenu)
+    if (!m_bShowSidepanel)
     {
         return;
     }
@@ -853,13 +844,13 @@ void Interface::DrawInfoMenu()
 
                         if (ImGui::CollapsingHeader("Random rotations"))
                         {
-                            ImGui::Checkbox("Enable",  &ObjManager::bRandomRot);
+                            ImGui::Checkbox("Enable",  &Interface::m_bRandomRot);
                             Widgets::ShowTooltip("Places objects with random rotations in given range");
 
                             ImGui::Spacing();
-                            ImGui::InputFloat2("Rot X##RR", ObjManager::randomRotX);
-                            ImGui::InputFloat2("Rot Y##RR", ObjManager::randomRotY);
-                            ImGui::InputFloat2("Rot Z##RR", ObjManager::randomRotZ);
+                            ImGui::InputFloat2("Rot X##RR", &Interface::m_RandomRotX[0]);
+                            ImGui::InputFloat2("Rot Y##RR", &Interface::m_RandomRotY[0]);
+                            ImGui::InputFloat2("Rot Z##RR", &Interface::m_RandomRotZ[0]);
 
                             ImGui::Spacing();
                             ImGui::Separator();
@@ -884,19 +875,19 @@ void Interface::DrawInfoMenu()
                             Viewport::SetCameraPosn(pos);
                         }
                         ImGui::Spacing();
-                        if (ImGui::SliderFloat("Zoom", &Viewport::m_fFOV, 10.0f, 115.0f))
+                        if (ImGui::SliderFloat("Zoom", &Viewport::Viewport::m_fFOV, 10.0f, 115.0f))
                         {
-                            TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::m_fFOV, 250, true);
+                            TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::Viewport::m_fFOV, 250, true);
                             Command<Commands::CAMERA_PERSIST_FOV>(true);
                         }
-                        if (ImGui::SliderInt("Move speed", &Viewport::m_nMul, 1, 10))
+                        if (ImGui::SliderInt("Move speed", &Viewport::m_nMoveSpeed, 1, 10))
                         {
-                            gConfig.SetValue("editor.moveSpeed", Viewport::m_nMul);
+                            gConfig.SetValue("editor.moveSpeed", Viewport::m_nMoveSpeed);
                         }
                         ImGui::Spacing();
                         ImGui::Separator();
                     }
-                    
+
                     ImGui::EndChild();
                 }
                 ImGui::EndTabItem();
@@ -915,7 +906,7 @@ void Interface::DrawInfoMenu()
                         static ImGuiTextFilter filter;
 
                         ImGui::Spacing();
-                        if (ObjManager::m_pVecEntities.size() == 0)
+                        if (ObjManager::m_pPlacedObjs.size() == 0)
                         {
                             ImGui::TextWrapped("You haven't placed any objects yet!");
                         }
@@ -923,15 +914,15 @@ void Interface::DrawInfoMenu()
                         {
                             if (ImGui::Button("Remove All", Utils::GetSize(bShowAnyway ? 2 : 1)))
                             {
-                                for (auto &pObj : ObjManager::m_pVecEntities)
+                                for (auto &pObj : ObjManager::m_pPlacedObjs)
                                 {
                                     pObj->Remove();
                                 }
                                 ObjManager::m_pSelected = nullptr;
-                                ObjManager::m_pVecEntities.clear();
+                                ObjManager::m_pPlacedObjs.clear();
                             }
 
-                            if (ObjManager::m_pVecEntities.size() > 500)
+                            if (ObjManager::m_pPlacedObjs.size() > 500)
                             {
                                 if (bShowAnyway)
                                 {
@@ -954,19 +945,19 @@ void Interface::DrawInfoMenu()
                             }
                             ImGui::Spacing();
 
-                            if (ObjManager::m_pVecEntities.size() < 500 || bShowAnyway)
+                            if (ObjManager::m_pPlacedObjs.size() < 500 || bShowAnyway)
                             {
                                 filter.Draw("Search");
                                 if (ImGui::IsItemActive())
                                 {
-                                    m_bIsInputLocked = true;
+                                    m_bInputLocked = true;
                                 }
                                 ImGui::Spacing();
                                 if (ImGui::BeginChild("Objects child"))
                                 {
-                                    for (size_t i = 0; i < ObjManager::m_pVecEntities.size(); i++)
+                                    for (size_t i = 0; i < ObjManager::m_pPlacedObjs.size(); i++)
                                     {
-                                        CObject *pObj = ObjManager::m_pVecEntities[i];
+                                        CObject *pObj = ObjManager::m_pPlacedObjs[i];
                                         auto &data = ObjManager::m_objData.Get(pObj);
 
                                         if (data.m_modelName == "")
@@ -1005,17 +996,17 @@ void Interface::DrawInfoMenu()
                     if(ImGui::BeginTabItem("Favourites"))
                     {
                         ImGui::Spacing();
-                        Widgets::DrawJSON(m_favData, 
-                        [](std::string& root, std::string& key, std::string& value)
+                        Widgets::DrawJSON(m_favData, m_ContextMenu, 
+                                          [](std::string& root, std::string& key, std::string& value)
                         {
-                            Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                            ObjManager::ClipBoard::m_nModel = std::stoi(value);
                             CHud::SetHelpMessage("Object Copied", false, false, false);
                         },
                         [](std::string& root, std::string& key, std::string& value)
                         {
                             if (ImGui::MenuItem("Copy"))
                             {
-                                Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                                ObjManager::ClipBoard::m_nModel = std::stoi(value);
                                 CHud::SetHelpMessage("Object Copied", false, false, false);
                             }
                             if (ImGui::MenuItem("Remove"))
@@ -1050,12 +1041,12 @@ void Interface::DrawInfoMenu()
                     ImGui::InputTextWithHint("Location", "Groove Street", m_nLocationBuffer, IM_ARRAYSIZE(m_nLocationBuffer));
                     if (ImGui::IsItemActive())
                     {
-                        m_bIsInputLocked = true;
+                        m_bInputLocked = true;
                     }
                     ImGui::InputTextWithHint("Coordinates", "x, y, z", m_nInputBuffer, IM_ARRAYSIZE(m_nInputBuffer));
                     if (ImGui::IsItemActive())
                     {
-                        m_bIsInputLocked = true;
+                        m_bInputLocked = true;
                     }
                     ImGui::Spacing();
                     if (ImGui::Button("Insert current coord", Utils::GetSize(2)))
@@ -1071,7 +1062,7 @@ void Interface::DrawInfoMenu()
                     }
                     ImGui::Spacing();
                 }
-                Widgets::DrawJSON(m_locData,
+                Widgets::DrawJSON(m_locData, m_ContextMenu,
                                   [](std::string& root, std::string& key, std::string& loc)
                 {
                     try
@@ -1104,16 +1095,15 @@ void Interface::DrawInfoMenu()
                         }
                     }
                 });
-                ProcessContextMenu();
                 ImGui::EndTabItem();
             }
             //----------------------------------------------------
             // Browser
             if(ImGui::BeginTabItem("Browser", NULL,
-                                   Browser::m_bShowNextFrame ? ImGuiTabItemFlags_SetSelected : NULL))
+                                   Viewport::Browser::m_bShowNextFrame ? ImGuiTabItemFlags_SetSelected : NULL))
             {
-                Browser::m_bShowNextFrame = false;
-                Browser::m_bShown = true;
+                Viewport::Browser::m_bShowNextFrame = false;
+                Viewport::Browser::m_bShown = true;
                 static ImGuiTextFilter IplFilter;
                 static ImGuiTextFilter totalFilter;
                 static std::vector<std::string> iplList;
@@ -1130,32 +1120,27 @@ void Interface::DrawInfoMenu()
                 }
                 static std::string selected = iplList[0];
                 ImGui::Spacing();
-                ImGui::Text("Total IDEs loaded: %d", iplCount);
-                ImGui::Text("Total models loaded: %d", ObjManager::totalIDELinesLoaded);
+                ImGui::Text("Total IPLs loaded: %d", iplCount);
+                ImGui::Text("Total models loaded: %d", ObjManager::m_nTotalIDELine);
                 ImGui::Spacing();
-                ImGui::Checkbox("Auto rotate", &Viewport::m_bObjBrowserAutoRot);
-                ImGui::SliderFloat("Render scale", &Viewport::m_nRenderScale, 0.0f, 5.0f);
+                ImGui::Checkbox("Auto rotate", &Viewport::Browser::m_bAutoRot);
+                ImGui::SliderFloat("Render scale", &Viewport::Browser::m_fScale, 0.0f, 5.0f);
                 ImGui::Spacing();
                 if (ImGui::Button("Copy render object", Utils::GetSize()))
                 {
-                    Viewport::COPY_MODEL::m_nModel = Browser::GetSelected();
+                    ObjManager::ClipBoard::m_nModel = Viewport::Browser::GetSelected();
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
                 if(ImGui::BeginTabBar("Broweser Tab", ImGuiTabBarFlags_NoTooltip))
                 {
-                    if (ImGui::IsMouseClicked(1))
-                    {
-                        m_contextMenu.function = nullptr;
-                    }
-
                     if(ImGui::BeginTabItem("IPL search"))
                     {
                         ImGui::Spacing();
                         IplFilter.Draw("Search");
                         if(ImGui::IsItemActive())
                         {
-                            m_bIsInputLocked = true;
+                            m_bInputLocked = true;
                         }
 
                         if (Widgets::ListBoxStr("IDE", iplList, selected))
@@ -1179,18 +1164,17 @@ void Interface::DrawInfoMenu()
                                 {
                                     if (ImGui::MenuItem(text.c_str()))
                                     {
-                                        Interface::Browser::SetSelected(data.first);
+                                        Viewport::Browser::SetSelected(data.first);
                                     }
                                     if (ImGui::IsItemClicked(1))
                                     {
-                                        Interface::m_contextMenu.function = SearchContextMenu;
-                                        Interface::m_contextMenu.rootKey = "";
-                                        Interface::m_contextMenu.key = data.second;
-                                        Interface::m_contextMenu.value = std::to_string(data.first);
+                                        m_ContextMenu.m_pFunc = ContextMenu_Search;
+                                        m_ContextMenu.m_Key = data.second;
+                                        m_ContextMenu.m_Val = std::to_string(data.first);
                                     }
                                 }
                             }
-                            ProcessContextMenu();
+                            DrawContextMenu();
                             ImGui::EndChild();
                         }
                         ImGui::EndTabItem();
@@ -1204,7 +1188,7 @@ void Interface::DrawInfoMenu()
                         totalFilter.Draw("##Search");
                         if(ImGui::IsItemActive())
                         {
-                            m_bIsInputLocked = true;
+                            m_bInputLocked = true;
                         }
                         if (KeyPressed(VK_RETURN))
                         {
@@ -1236,17 +1220,16 @@ full_search:
                                 std::string text = std::to_string(data.first) + " - " +  data.second;
                                 if (ImGui::MenuItem(text.c_str()))
                                 {
-                                    Interface::Browser::SetSelected(data.first);
+                                    Viewport::Browser::SetSelected(data.first);
                                 }
                                 if (ImGui::IsItemClicked(1))
                                 {
-                                    Interface::m_contextMenu.function = SearchContextMenu;
-                                    Interface::m_contextMenu.rootKey = "";
-                                    Interface::m_contextMenu.key = data.second;
-                                    Interface::m_contextMenu.value = std::to_string(data.first);
+                                    m_ContextMenu.m_pFunc = ContextMenu_Search;
+                                    m_ContextMenu.m_Key = data.second;
+                                    m_ContextMenu.m_Val = std::to_string(data.first);
                                 }
                             }
-                            ProcessContextMenu();
+                            DrawContextMenu();
                             ImGui::EndChild();
                         }
                         ImGui::EndTabItem();
@@ -1254,16 +1237,16 @@ full_search:
                     if(ImGui::BeginTabItem("Favourites"))
                     {
                         ImGui::Spacing();
-                        Widgets::DrawJSON(m_favData,
+                        Widgets::DrawJSON(m_favData, m_ContextMenu,
                                           [](std::string& root, std::string& key, std::string& model)
                         {
-                            Interface::Browser::SetSelected((size_t)std::stoi(model));
+                            Viewport::Viewport::Browser::SetSelected((size_t)std::stoi(model));
                         },
                         [](std::string& root, std::string& key, std::string& value)
                         {
                             if (ImGui::MenuItem("Copy"))
                             {
-                                Viewport::COPY_MODEL::m_nModel = std::stoi(value);
+                                ObjManager::ClipBoard::m_nModel = std::stoi(value);
                                 CHud::SetHelpMessage("Object Copied", false, false, false);
                             }
                             if (ImGui::MenuItem("Remove"))
@@ -1280,33 +1263,13 @@ full_search:
             }
             else
             {
-                Browser::m_bShowNextFrame = false;
+                Viewport::Browser::m_bShown = false;
             }
             // ---------------------------------------------------
             ImGui::EndTabBar();
         }
         ImGui::End();
     }
+    DrawContextMenu();
 }
 
-void Interface::UpdateFoundMenu()
-{
-    if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2))))
-    {
-        ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Downlod page", Utils::GetSize(2)))
-    {
-        ShellExecute(NULL, "open", "https://github.com/user-grinch/Map-Editor/", NULL, NULL, SW_SHOWNORMAL);
-    }
-    ImGui::Spacing();
-    Widgets::CenterdText("Current version: " EDITOR_VERSION_NUMBER);
-    Widgets::CenterdText("Latest version: " + Updater::GetUpdateVersion());
-    ImGui::Dummy(ImVec2(0,20));
-
-    ImGui::TextWrapped("A newer version of Map Editor is available with,");
-    ImGui::Text("1. New features\n2. Bug fixes\n3. Improvements");
-    ImGui::Spacing();
-    ImGui::TextWrapped("Click on the `Download page` button and follow the instructions there to update.");
-}

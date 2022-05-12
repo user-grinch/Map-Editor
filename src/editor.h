@@ -5,16 +5,15 @@ class Editor
 {
 private:
     static void ApplyStyle();
+    static inline bool m_bOpened; // Is the editor being shown
 
 public:
-    static inline bool m_bShowEditor;
-    static inline bool m_bShowGUI = true;
 
     Editor() = delete;
     Editor(Editor&) = delete;
 
     static void Init();
-    static void CheckForUpdate();
-    static void DrawWindow();
+    static bool IsOpen();
+    static void Draw();
     static void Cleanup();
 };
