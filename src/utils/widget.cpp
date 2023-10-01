@@ -124,7 +124,7 @@ void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fA
                 contextOptionsFunc();
             }
 
-            if (ImGui::MenuItem(TEXT( "Menu.Close"))) {
+            if (ImGui::MenuItem("Close")) {
                 contextMenu.show = false;
             }
             ImGui::EndPopup();
