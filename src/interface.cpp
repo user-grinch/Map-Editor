@@ -78,12 +78,6 @@ void ImportPopup() {
 }
 
 void ExportPopup() {
-    ImGui::Spacing();
-    ImGui::Text("Notes,");
-    ImGui::TextWrapped("Files are exported to '(game dir)/MapEditor' directory.");
-    ImGui::TextWrapped("Exisitng files with the same name will be replaced!");
-    ImGui::Dummy(ImVec2(0, 20));
-
     static char buffer[32];
     ImGui::Spacing();
     ImGui::InputTextWithHint("File name##Buffer", "ProjectProps.ipl", buffer, ARRAYSIZE(buffer));
@@ -93,13 +87,33 @@ void ExportPopup() {
     ImGui::Spacing();
     if (ImGui::Button("Export IPL", Utils::GetSize())) {
         if (strcmp(buffer, "") == 0) {
-            strcpy(buffer, "ProjectProps.ipl");
+            strcpy(buffer, "Untitled.ipl");
         }
-        FileMgr::ExportIPL(buffer);
-        Interface.m_PopupMenu.m_bShow = false;
+
+        std::string fullPath = std::string(PLUGIN_PATH((char*)FILE_NAME"/")) + buffer;
+        if (std::filesystem::exists(fullPath)) {
+            auto temp = std::move(Interface.m_PopupMenu);
+            Interface.m_PopupMenu.m_Title = "Replace Confirmation Dialog";
+            Interface.m_PopupMenu.m_pFunc = [temp](){
+                ImGui::Spacing();
+                ImGui::TextWrapped("Another file with the same name already exists. Would you like to replace it?");
+                ImGui::Dummy(ImVec2(0, 20));
+                if (ImGui::Button("Yes", Widget::CalcSize(2))) {
+                    FileMgr::ExportIPL(buffer);
+                    Interface.m_PopupMenu.m_bShow = false;
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("No", Widget::CalcSize(2))) {
+                    Interface.m_PopupMenu = std::move(temp);
+                }
+            };
+        } else {
+            FileMgr::ExportIPL(buffer);
+            Interface.m_PopupMenu.m_bShow = false;
+        }
+        
     }
 }
-
 
 void UpdateFoundPopup() {
     if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2)))) {

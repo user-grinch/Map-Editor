@@ -66,7 +66,7 @@ class ViewportMgr {
     eViewportState m_eState = eViewportState::Edit;
     bool m_bHovered; // Is mouse hovering viewport
     CEntity *m_HoveredEntity; // Currently hovered entity
-    float m_nMoveSpeed = 1.0f; // movement speed multiplier controls
+    float m_nMoveSpeed = 0.25f; // movement speed multiplier
     float m_fFOV = 70.0f;
     CVector m_fWorldPos; // cursor world position
     BrowserMgr Browser;

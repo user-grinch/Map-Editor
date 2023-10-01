@@ -605,8 +605,8 @@ void ViewportMgr::Process() {
 
     m_fMousePos.x -= m_fMousePos.x > 360.0f ? 360.0f : 0.0f;
     m_fMousePos.x += m_fMousePos.x < 0.0f ? 360.0f : 0.0f;
-    m_fMousePos.y += m_fMousePos.y > 150.0f ? 150.0f : 0.0f;
-    m_fMousePos.y += m_fMousePos.y < -150.0f ? -150.0f : 0.0f;
+    m_fMousePos.y = m_fMousePos.y > 150.0f ? 150.0f : m_fMousePos.y;
+    m_fMousePos.y = m_fMousePos.y < -150.0f ? -150.0f : m_fMousePos.y;
 
     if (KeyPressed(VK_LCONTROL)) {
         speed /= 2;
