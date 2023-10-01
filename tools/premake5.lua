@@ -77,6 +77,7 @@ workspace "MapEditorSA"
             "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NON_CONFORMING_SWPRINTFS",
             "GTASA",
+            "_GTA_",
             "_DX9_SDK_INSTALLED",
             "PLUGIN_SGV_10US",
             "GTASA"

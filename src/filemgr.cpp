@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "filemgr.h"
-#include "objmanager.h"
+#include "objectmgr.h"
 #include "utils/utils.h"
 #include "defines.h"
 #include <fstream>
@@ -37,8 +37,8 @@ void FileMgr::ImportIDE(std::string path, bool logImports) {
                     }
                 }
 
-                ObjManager::m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
-                ObjManager::m_nTotalIDELine++;
+                ObjectMgr::m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
+                ObjectMgr::m_nTotalIDELine++;
             }
         }
     }
@@ -73,7 +73,7 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports) {
             Command<Commands::CREATE_OBJECT>(model, pos.x, pos.y, pos.z, &hObj);
 
             CObject *pObj = CPools::GetObject(hObj);
-            auto &data = ObjManager::m_objData.Get(pObj);
+            auto &data = ObjectMgr::m_objData.Get(pObj);
             Command<Commands::SET_OBJECT_QUATERNION>(hObj, rx, ry, rz, rw);
 
             // Store rotation
@@ -90,12 +90,12 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports) {
             Utils::GetDegreeInRange(&rot.z);
             data.SetRotation(rot, false);
             data.SetQuat({rx, ry, rz, rw});
-            data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
+            data.m_modelName = ObjectMgr::FindNameFromModel(pObj->m_nModelIndex);
 
             // Setting quat messes with z coord?
             Command<Commands::SET_OBJECT_COORDINATES>(hObj, pos.x, pos.y, pos.z);
             Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
-            ObjManager::m_pPlacedObjs.push_back(CPools::GetObject(hObj));
+            ObjectMgr::m_pPlacedObjs.push_back(CPools::GetObject(hObj));
         }
     }
     CHud::SetHelpMessage("IPL imported", false, false, false);
@@ -105,9 +105,9 @@ void FileMgr::ExportIPL(const char* fileName) {
     std::fstream file;
     file.open(std::string(PLUGIN_PATH((char*)FILE_NAME"/")) + fileName, std::ios::out);
     file << "# Generated using Map Editor by Grinch_\ninst" << std::endl;
-    for (CObject *pObj : ObjManager::m_pPlacedObjs) {
+    for (CObject *pObj : ObjectMgr::m_pPlacedObjs) {
         int model = pObj->m_nModelIndex;
-        auto &data = ObjManager::m_objData.Get(pObj);
+        auto &data = ObjectMgr::m_objData.Get(pObj);
         CVector pos;
         Command<Commands::GET_OBJECT_COORDINATES>(data.handle, &pos.x, &pos.y, &pos.z);
         auto quat = data.GetQuat();
@@ -122,7 +122,7 @@ void FileMgr::ExportIPL(const char* fileName) {
         // }
 
         file << std::format("{}, {}, 0, {}, {}, {},  {}, {}, {}, {}, -1",
-                            model, ObjManager::FindNameFromModel(model), pos.x, pos.y, pos.z,
+                            model, ObjectMgr::FindNameFromModel(model), pos.x, pos.y, pos.z,
                             quat.x,  quat.y,  quat.z, quat.w)
              << std::endl;
     }

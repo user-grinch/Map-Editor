@@ -3,7 +3,7 @@
 #include "utils/utils.h"
 #include "viewport.h"
 #include "editor.h"
-#include "objmanager.h"
+#include "objectmgr.h"
 #include "utils/widget.h"
 #include "filemgr.h"
 #include <CHud.h>
@@ -15,14 +15,14 @@
 void ContextMenu_Search(std::string& root, std::string& key, std::string& value) {
     if (ImGui::MenuItem("Add to favourites")) {
         int model = std::stoi(value);
-        std::string keyName = value + " - " + ObjManager::FindNameFromModel(model);
-        Interface::m_favData.m_pData->Set(std::format("All.{}", keyName).c_str(), model);
-        Interface::m_favData.m_pData->Save();
+        std::string keyName = value + " - " + ObjectMgr::FindNameFromModel(model);
+        Interface.m_favData.m_pData->Set(std::format("All.{}", keyName).c_str(), model);
+        Interface.m_favData.m_pData->Save();
         CHud::SetHelpMessage("Added to favourites", false, false, false);
     };
 
     if (ImGui::MenuItem("Copy")) {
-        ObjManager::ClipBoard::m_nModel = std::stoi(value);
+        ObjectMgr::ClipBoard::m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     };
 }
@@ -46,15 +46,15 @@ void ImportPopup() {
 
         if (ImGui::Button("Import IPL", Utils::GetSize(2))) {
             FileMgr::ImportIPL(selectedFileName.c_str(), logImports);
-            Interface::m_PopupMenu.m_bShow = false;
+            Interface.m_PopupMenu.m_bShow = false;
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear placed objects", Utils::GetSize(2))) {
-            for (auto &pObj : ObjManager::m_pPlacedObjs) {
+            for (auto &pObj : ObjectMgr::m_pPlacedObjs) {
                 pObj->Remove();
             }
-            ObjManager::m_pSelected = nullptr;
-            ObjManager::m_pPlacedObjs.clear();
+            ObjectMgr::m_pSelected = nullptr;
+            ObjectMgr::m_pPlacedObjs.clear();
             CHud::SetHelpMessage("Current objects cleared", false, false, false);
         }
         ImGui::Spacing();
@@ -88,7 +88,7 @@ void ExportPopup() {
     ImGui::Spacing();
     ImGui::InputTextWithHint("File name##Buffer", "ProjectProps.ipl", buffer, ARRAYSIZE(buffer));
     if (ImGui::IsItemActive()) {
-        Interface::m_bInputLocked = true;
+        Interface.m_bInputLocked = true;
     }
     ImGui::Spacing();
     if (ImGui::Button("Export IPL", Utils::GetSize())) {
@@ -96,7 +96,7 @@ void ExportPopup() {
             strcpy(buffer, "ProjectProps.ipl");
         }
         FileMgr::ExportIPL(buffer);
-        Interface::m_PopupMenu.m_bShow = false;
+        Interface.m_PopupMenu.m_bShow = false;
     }
 }
 
@@ -325,13 +325,13 @@ void WelcomePopup() {
     }
     ImGui::SameLine();
     if (ImGui::Button("Controls", Utils::GetSize(3))) {
-        Interface::m_PopupMenu.m_Title = "Controls";
-        Interface::m_PopupMenu.m_pFunc = ControlsPopup;
+        Interface.m_PopupMenu.m_Title = "Controls";
+        Interface.m_PopupMenu.m_pFunc = ControlsPopup;
     }
     ImGui::SameLine();
     if (ImGui::Button("About page", Utils::GetSize(3))) {
-        Interface::m_PopupMenu.m_Title = "About";
-        Interface::m_PopupMenu.m_pFunc = AboutEditorPopup;
+        Interface.m_PopupMenu.m_Title = "About";
+        Interface.m_PopupMenu.m_pFunc = AboutEditorPopup;
     }
     ImGui::Dummy(ImVec2(0, 20));
     if (ImGui::BeginChild("WelcomeScreen")) {
@@ -356,28 +356,30 @@ void WelcomePopup() {
     }
 }
 
+InterfaceMgr Interface;
+InterfaceMgr::InterfaceMgr() {
+    Events::initGameEvent += [this](){
+        m_bAutoSave = gConfig.Get("editor.autoSave", true);
+        m_bAutoTpToLoc = gConfig.Get("editor.autoTpToLoc", false);
+        m_bAutoSnapToGround = gConfig.Get("editor.autoSnap", true);
+        m_bDrawAxisLines = gConfig.Get("editor.drawAxisLines", true);
+        m_bDrawBoundingBox = gConfig.Get("editor.drawBoundingBox", true);
+        m_bShowFPS = gConfig.Get("editor.showFPS", false);
+        m_bShowHoverMenu = gConfig.Get("editor.showHoverMenu", true);
+        m_bShowSidepanel = gConfig.Get("editor.showInfoMenu", true);
+        m_bWelcomeShown = gConfig.Get("editor.welcomeDisplayed", false);
 
-void Interface::Init() {
-    m_bAutoSave = gConfig.Get("editor.autoSave", true);
-    m_bAutoTpToLoc = gConfig.Get("editor.autoTpToLoc", false);
-    m_bAutoSnapToGround = gConfig.Get("editor.autoSnap", true);
-    m_bDrawAxisLines = gConfig.Get("editor.drawAxisLines", true);
-    m_bDrawBoundingBox = gConfig.Get("editor.drawBoundingBox", true);
-    m_bShowFPS = gConfig.Get("editor.showFPS", false);
-    m_bShowHoverMenu = gConfig.Get("editor.showHoverMenu", true);
-    m_bShowSidepanel = gConfig.Get("editor.showInfoMenu", true);
-    m_bWelcomeShown = gConfig.Get("editor.welcomeDisplayed", false);
-
-    if (!m_bWelcomeShown) {
-        m_PopupMenu.m_bShow = true;
-        m_PopupMenu.m_Title = "Map Editor";
-        m_PopupMenu.m_pFunc = WelcomePopup;
-        m_bWelcomeShown = true;
-        gConfig.Set("editor.welcomeDisplayed", m_bWelcomeShown);
-    }
+        if (!m_bWelcomeShown) {
+            m_PopupMenu.m_bShow = true;
+            m_PopupMenu.m_Title = "Map Editor";
+            m_PopupMenu.m_pFunc = WelcomePopup;
+            m_bWelcomeShown = true;
+            gConfig.Set("editor.welcomeDisplayed", m_bWelcomeShown);
+        }
+    };
 }
 
-void Interface::Process() {
+void InterfaceMgr::Process() {
     if (m_bShowGUI) {
         DrawMainMenuBar();
         DrawPopupMenu();
@@ -385,7 +387,7 @@ void Interface::Process() {
     }
 }
 
-void Interface::DrawContextMenu() {
+void InterfaceMgr::DrawContextMenu() {
     if (m_ContextMenu.m_bShow) {
         if (ImGui::BeginPopupContextWindow("ContextMenu")) {
             if (m_ContextMenu.m_Key != "") {
@@ -404,7 +406,7 @@ void Interface::DrawContextMenu() {
     }
 }
 
-void Interface::DrawPopupMenu() {
+void InterfaceMgr::DrawPopupMenu() {
     if (Updater::IsUpdateAvailable()) {
         m_PopupMenu.m_bShow = true;
         m_PopupMenu.m_Title = "Update available!";
@@ -421,7 +423,7 @@ void Interface::DrawPopupMenu() {
     ImGui::SetNextWindowSizeConstraints(ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95), // manually tested
                                         ImVec2(screen::GetScreenWidth()/4, screen::GetScreenHeight()/1.95));
 
-    ImVec2 size = Viewport::GetSize();
+    ImVec2 size = Viewport.GetSize();
     ImGui::SetNextWindowPos(ImVec2((size.x - prevSize.x)/2, (size.y - prevSize.y)/2), ImGuiCond_Always);
     if (ImGui::Begin(m_PopupMenu.m_Title.c_str(), &m_PopupMenu.m_bShow, flags)) {
         if (m_PopupMenu.m_pFunc) {
@@ -437,13 +439,13 @@ void Interface::DrawPopupMenu() {
     }
 }
 
-void Interface::DrawMainMenuBar() {
+void InterfaceMgr::DrawMainMenuBar() {
     if (ImGui::BeginMainMenuBar()) {
         ImGui::Text(EDITOR_TITLE" by Grinch_");
         ImGui::Spacing();
         ImGui::Separator();
         ImGui::Spacing();
-        if(Viewport::m_eState == eViewportState::Edit) {
+        if(Viewport.m_eState == eViewportState::Edit) {
             ImGui::Text("Edit Mode");
         } else {
             ImGui::Text("View Mode");
@@ -452,7 +454,7 @@ void Interface::DrawMainMenuBar() {
         ImGui::Separator();
         ImGui::Spacing();
 
-        if (Interface::m_bShowFPS) {
+        if (m_bShowFPS) {
             ImGui::Text("Framerate: %0.1f", ImGui::GetIO().Framerate);
             ImGui::Spacing();
             ImGui::Separator();
@@ -475,14 +477,14 @@ void Interface::DrawMainMenuBar() {
         if (ImGui::BeginMenu("Options")) {
             static bool bNoPeds, bNoVehicles;
 
-            if (ImGui::MenuItem("Auto save every minute", NULL, &Interface::m_bAutoSave)) {
-                gConfig.Set("editor.autoSave", Interface::m_bAutoSave);
+            if (ImGui::MenuItem("Auto save every minute", NULL, &m_bAutoSave)) {
+                gConfig.Set("editor.autoSave", m_bAutoSave);
             }
-            if (ImGui::MenuItem("Auto snap to ground", NULL, &Interface::m_bAutoSnapToGround)) {
-                gConfig.Set("editor.autoSnap", Interface::m_bAutoSnapToGround);
+            if (ImGui::MenuItem("Auto snap to ground", NULL, &m_bAutoSnapToGround)) {
+                gConfig.Set("editor.autoSnap", m_bAutoSnapToGround);
             }
-            if (ImGui::MenuItem("Auto teleport to location", NULL, &Interface::m_bAutoTpToLoc)) {
-                gConfig.Set("editor.autoTpToLoc", Interface::m_bAutoTpToLoc);
+            if (ImGui::MenuItem("Auto teleport to location", NULL, &m_bAutoTpToLoc)) {
+                gConfig.Set("editor.autoTpToLoc", m_bAutoTpToLoc);
             }
             static bool bFreezeTime;
             if (ImGui::MenuItem("Freeze time", NULL, &bFreezeTime)) {
@@ -606,7 +608,7 @@ void Interface::DrawMainMenuBar() {
     }
 }
 
-void Interface::DrawSidepanel() {
+void InterfaceMgr::DrawSidepanel() {
     if (!m_bShowSidepanel) {
         return;
     }
@@ -631,20 +633,20 @@ void Interface::DrawSidepanel() {
                 if (ImGui::BeginChild("Editor child")) {
                     // ---------------------------------------------------
                     // Object info
-                    if (ObjManager::m_pSelected) {
+                    if (ObjectMgr::m_pSelected) {
                         if (ImGui::CollapsingHeader("Object selection", ImGuiTreeNodeFlags_DefaultOpen)) {
-                            int hObj = CPools::GetObjectRef(ObjManager::m_pSelected);
-                            CVector *objPos = &ObjManager::m_pSelected->GetPosition();
-                            auto &data = ObjManager::m_objData.Get(ObjManager::m_pSelected);
-                            int model = ObjManager::m_pSelected->m_nModelIndex;
-                            if (ObjManager::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
-                                    || ObjManager::m_pSelected->m_nType == ENTITY_TYPE_BUILDING) {
+                            int hObj = CPools::GetObjectRef(ObjectMgr::m_pSelected);
+                            CVector *objPos = &ObjectMgr::m_pSelected->GetPosition();
+                            auto &data = ObjectMgr::m_objData.Get(ObjectMgr::m_pSelected);
+                            int model = ObjectMgr::m_pSelected->m_nModelIndex;
+                            if (ObjectMgr::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
+                                    || ObjectMgr::m_pSelected->m_nType == ENTITY_TYPE_BUILDING) {
                                 static int bmodel = 0;
                                 static std::string name = "";
 
                                 // lets not go over 20000 models each frame
                                 if (bmodel != model) {
-                                    name = ObjManager::FindNameFromModel(model);
+                                    name = ObjectMgr::FindNameFromModel(model);
                                     bmodel = model;
                                 }
 
@@ -656,7 +658,7 @@ void Interface::DrawSidepanel() {
                             ImGui::Columns(2, NULL, false);
                             ImGui::Text("Model: %d", model);
                             ImGui::NextColumn();
-                            switch(ObjManager::m_pSelected->m_nType) {
+                            switch(ObjectMgr::m_pSelected->m_nType) {
                             case ENTITY_TYPE_OBJECT:
                                 ImGui::Text("Type: Dynamic");
                                 break;
@@ -698,13 +700,13 @@ void Interface::DrawSidepanel() {
                         }
 
                         if (ImGui::CollapsingHeader("Random rotations")) {
-                            ImGui::Checkbox("Enable",  &Interface::m_bRandomRot);
+                            ImGui::Checkbox("Enable",  &m_bRandomRot);
                             Widget::Tooltip("Places objects with random rotations in given range");
 
                             ImGui::Spacing();
-                            ImGui::InputFloat2("Rot X##RR", &Interface::m_RandomRotX[0]);
-                            ImGui::InputFloat2("Rot Y##RR", &Interface::m_RandomRotY[0]);
-                            ImGui::InputFloat2("Rot Z##RR", &Interface::m_RandomRotZ[0]);
+                            ImGui::InputFloat2("Rot X##RR", &m_RandomRotX[0]);
+                            ImGui::InputFloat2("Rot Y##RR", &m_RandomRotY[0]);
+                            ImGui::InputFloat2("Rot Z##RR", &m_RandomRotZ[0]);
 
                             ImGui::Spacing();
                             ImGui::Separator();
@@ -716,21 +718,21 @@ void Interface::DrawSidepanel() {
                     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
                         CVector pos = TheCamera.GetPosition();
                         if (ImGui::InputFloat("Pos X##Cam", &pos.x)) {
-                            Viewport::SetCameraPosn(pos);
+                            Viewport.SetCameraPosn(pos);
                         }
                         if (ImGui::InputFloat("Pos Y##Cam", &pos.y)) {
-                            Viewport::SetCameraPosn(pos);
+                            Viewport.SetCameraPosn(pos);
                         }
                         if (ImGui::InputFloat("Pos Z##Cam", &pos.z)) {
-                            Viewport::SetCameraPosn(pos);
+                            Viewport.SetCameraPosn(pos);
                         }
                         ImGui::Spacing();
-                        if (ImGui::SliderFloat("Zoom", &Viewport::Viewport::m_fFOV, 10.0f, 115.0f)) {
-                            TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport::Viewport::m_fFOV, 250, true);
+                        if (ImGui::SliderFloat("Zoom", &Viewport.m_fFOV, 10.0f, 115.0f)) {
+                            TheCamera.LerpFOV(TheCamera.FindCamFOV(), Viewport.m_fFOV, 250, true);
                             Command<Commands::CAMERA_PERSIST_FOV>(true);
                         }
-                        if (ImGui::SliderFloat("Move speed", &Viewport::m_nMoveSpeed, 0.1f, 1.0f)) {
-                            gConfig.Set("editor.moveSpeed", Viewport::m_nMoveSpeed);
+                        if (ImGui::SliderFloat("Move speed", &Viewport.m_nMoveSpeed, 0.1f, 1.0f)) {
+                            gConfig.Set("editor.moveSpeed", Viewport.m_nMoveSpeed);
                         }
                         ImGui::Spacing();
                         ImGui::Separator();
@@ -751,18 +753,18 @@ void Interface::DrawSidepanel() {
                         static ImGuiTextFilter filter;
 
                         ImGui::Spacing();
-                        if (ObjManager::m_pPlacedObjs.size() == 0) {
+                        if (ObjectMgr::m_pPlacedObjs.size() == 0) {
                             ImGui::TextWrapped("You haven't placed any objects yet!");
                         } else {
                             if (ImGui::Button("Remove All", Utils::GetSize(bShowAnyway ? 2 : 1))) {
-                                for (auto &pObj : ObjManager::m_pPlacedObjs) {
+                                for (auto &pObj : ObjectMgr::m_pPlacedObjs) {
                                     pObj->Remove();
                                 }
-                                ObjManager::m_pSelected = nullptr;
-                                ObjManager::m_pPlacedObjs.clear();
+                                ObjectMgr::m_pSelected = nullptr;
+                                ObjectMgr::m_pPlacedObjs.clear();
                             }
 
-                            if (ObjManager::m_pPlacedObjs.size() > 500) {
+                            if (ObjectMgr::m_pPlacedObjs.size() > 500) {
                                 if (bShowAnyway) {
                                     ImGui::SameLine();
                                     if (ImGui::Button("Hide list", Utils::GetSize(2))) {
@@ -779,19 +781,19 @@ void Interface::DrawSidepanel() {
                             }
                             ImGui::Spacing();
 
-                            if (ObjManager::m_pPlacedObjs.size() < 500 || bShowAnyway) {
+                            if (ObjectMgr::m_pPlacedObjs.size() < 500 || bShowAnyway) {
                                 filter.Draw("Search");
                                 if (ImGui::IsItemActive()) {
                                     m_bInputLocked = true;
                                 }
                                 ImGui::Spacing();
                                 if (ImGui::BeginChild("Objects child")) {
-                                    for (size_t i = 0; i < ObjManager::m_pPlacedObjs.size(); i++) {
-                                        CObject *pObj = ObjManager::m_pPlacedObjs[i];
-                                        auto &data = ObjManager::m_objData.Get(pObj);
+                                    for (size_t i = 0; i < ObjectMgr::m_pPlacedObjs.size(); i++) {
+                                        CObject *pObj = ObjectMgr::m_pPlacedObjs[i];
+                                        auto &data = ObjectMgr::m_objData.Get(pObj);
 
                                         if (data.m_modelName == "") {
-                                            data.m_modelName = ObjManager::FindNameFromModel(pObj->m_nModelIndex);
+                                            data.m_modelName = ObjectMgr::FindNameFromModel(pObj->m_nModelIndex);
                                         }
                                         char buf[32];
                                         sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
@@ -810,8 +812,8 @@ void Interface::DrawSidepanel() {
 
                                             // TODO: Rotate the camera to face the object
 
-                                            Viewport::SetCameraPosn(vec);
-                                            ObjManager::m_pSelected = pObj;
+                                            Viewport.SetCameraPosn(vec);
+                                            ObjectMgr::m_pSelected = pObj;
                                         }
                                     }
 
@@ -824,7 +826,7 @@ void Interface::DrawSidepanel() {
                     if(ImGui::BeginTabItem("Favourites")) {
                         ImGui::Spacing();
                         Widget::DataList(m_favData, [](std::string& root, std::string& key, std::string& value) {
-                            ObjManager::ClipBoard::m_nModel = std::stoi(value);
+                            ObjectMgr::ClipBoard::m_nModel = std::stoi(value);
                             CHud::SetHelpMessage("Object Copied", false, false, false);
                         });
                         ImGui::EndTabItem();
@@ -875,7 +877,7 @@ void Interface::DrawSidepanel() {
                         sscanf(loc.c_str(), "%d,%f,%f,%f", &dimension, &pos.x, &pos.y, &pos.z);
                         FindPlayerPed()->m_nAreaCode = dimension;
                         Command<Commands::SET_AREA_VISIBLE>(dimension);
-                        Viewport::SetCameraPosn(pos);
+                        Viewport.SetCameraPosn(pos);
                     } catch (...) {
                         CHud::SetHelpMessage("Invalid location", false, false, false);
                     }
@@ -885,9 +887,9 @@ void Interface::DrawSidepanel() {
             //----------------------------------------------------
             // Browser
             if(ImGui::BeginTabItem("Browser", NULL,
-                                   Viewport::Browser::m_bShowNextFrame ? ImGuiTabItemFlags_SetSelected : NULL)) {
-                Viewport::Browser::m_bShowNextFrame = false;
-                Viewport::Browser::m_bShown = true;
+                                   Viewport.Browser.m_bShowNextFrame ? ImGuiTabItemFlags_SetSelected : NULL)) {
+                Viewport.Browser.m_bShowNextFrame = false;
+                Viewport.Browser.m_bShown = true;
                 static ImGuiTextFilter IplFilter;
                 static ImGuiTextFilter totalFilter;
                 static std::vector<std::string> iplList;
@@ -895,21 +897,21 @@ void Interface::DrawSidepanel() {
 
                 int iplCount = iplList.size();
                 if (iplCount < 1) {
-                    for (auto &data : ObjManager::m_vecModelNames) {
+                    for (auto &data : ObjectMgr::m_vecModelNames) {
                         iplList.push_back(data.first);
                     }
-                    pData = &ObjManager::m_vecModelNames[0].second;
+                    pData = &ObjectMgr::m_vecModelNames[0].second;
                 }
                 static std::string selected = iplList[0];
                 ImGui::Spacing();
                 ImGui::Text("Total IPLs loaded: %d", iplCount);
-                ImGui::Text("Total models loaded: %d", ObjManager::m_nTotalIDELine);
+                ImGui::Text("Total models loaded: %d", ObjectMgr::m_nTotalIDELine);
                 ImGui::Spacing();
-                ImGui::Checkbox("Auto rotate", &Viewport::Browser::m_bAutoRot);
-                ImGui::SliderFloat("Render scale", &Viewport::Browser::m_fScale, 0.0f, 5.0f);
+                ImGui::Checkbox("Auto rotate", &Viewport.Browser.m_bAutoRot);
+                ImGui::SliderFloat("Render scale", &Viewport.Browser.m_fScale, 0.0f, 5.0f);
                 ImGui::Spacing();
                 if (ImGui::Button("Copy render object", Utils::GetSize())) {
-                    ObjManager::ClipBoard::m_nModel = Viewport::Browser::GetSelected();
+                    ObjectMgr::ClipBoard::m_nModel = Viewport.Browser.GetSelected();
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
@@ -922,7 +924,7 @@ void Interface::DrawSidepanel() {
                         }
 
                         if (Widget::ListBox("IDE", iplList, selected)) {
-                            for (auto &data : ObjManager::m_vecModelNames) {
+                            for (auto &data : ObjectMgr::m_vecModelNames) {
                                 if (data.first == selected) {
                                     pData = &data.second;
                                     break;
@@ -935,7 +937,7 @@ void Interface::DrawSidepanel() {
                                 std::string text = std::to_string(data.first) + " - " +  data.second;
                                 if (IplFilter.PassFilter(text.c_str())) {
                                     if (ImGui::MenuItem(text.c_str())) {
-                                        Viewport::Browser::SetSelected(data.first);
+                                        Viewport.Browser.SetSelected(data.first);
                                     }
                                     if (ImGui::IsItemClicked(1)) {
                                         m_ContextMenu.m_pFunc = ContextMenu_Search;
@@ -965,7 +967,7 @@ void Interface::DrawSidepanel() {
                         if (ImGui::Button("Search", Utils::GetSize())) {
 full_search:
                             searchResults.clear();
-                            for (auto &ipl : ObjManager::m_vecModelNames) {
+                            for (auto &ipl : ObjectMgr::m_vecModelNames) {
                                 for (auto &data : ipl.second) {
                                     std::string text = std::to_string(data.first) + " - " +  data.second;
 
@@ -980,7 +982,7 @@ full_search:
                             for (auto &data : searchResults) {
                                 std::string text = std::to_string(data.first) + " - " +  data.second;
                                 if (ImGui::MenuItem(text.c_str())) {
-                                    Viewport::Browser::SetSelected(data.first);
+                                    Viewport.Browser.SetSelected(data.first);
                                 }
                                 if (ImGui::IsItemClicked(1)) {
                                     m_ContextMenu.m_pFunc = ContextMenu_Search;
@@ -997,7 +999,7 @@ full_search:
                         ImGui::Spacing();
                         Widget::DataList(m_favData,
                         [](std::string& root, std::string& key, std::string& model) {
-                            Viewport::Viewport::Browser::SetSelected((size_t)std::stoi(model));
+                            Viewport.Browser.SetSelected((size_t)std::stoi(model));
                         });
                         ImGui::EndTabItem();
                     }
@@ -1005,7 +1007,7 @@ full_search:
                 }
                 ImGui::EndTabItem();
             } else {
-                Viewport::Browser::m_bShown = false;
+                Viewport.Browser.m_bShown = false;
             }
             // ---------------------------------------------------
             ImGui::EndTabBar();

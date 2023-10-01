@@ -65,14 +65,14 @@ void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fA
         ImGui::SameLine();
     }
 
-    if (Widget::Filter("##Filter", data.m_Filter, TEXT( "Window.Search"))) {
+    if (Widget::Filter("##Filter", data.m_Filter, "Search")) {
         data.UpdateSearchList(favourites);
     }
     ImGui::PopItemWidth();
 
     ImGui::Spacing();
     if (favourites && data.m_pData->GetTable("Favourites")->size() == 0) {
-        Widget::TextCentered(TEXT("Menu.FavouritesNone"));
+        Widget::TextCentered("No favourites found!");
     }
     ImGui::BeginChild("CliipingLIst");
     ImGuiListClipper clipper;
@@ -99,7 +99,7 @@ void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fA
             ImGui::Text(contextMenu.key.c_str());
             ImGui::Separator();
 
-            if (!favourites && ImGui::MenuItem(TEXT("Menu.Favourites"))) {
+            if (!favourites && ImGui::MenuItem("Favourites")) {
                 data.m_pData->Set(std::format("Favourites.{}", contextMenu.key).c_str(), contextMenu.val);
                 data.m_pData->Save();
             }

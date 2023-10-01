@@ -2,52 +2,109 @@
 #include "editor.h"
 #include "viewport.h"
 #include "interface.h"
-#include "utils/utils.h"
-#include "objmanager.h"
 #include <CHud.h>
 #include <CMenuManager.h>
 #include "filemgr.h"
+#include "objectmgr.h"
 
-bool Editor::IsOpen() {
+bool EditorMgr::IsOpen() {
     return m_bOpened;
 }
 
-void Editor::Init() {
-    D3dHook::Init(&Draw);
-    ApplyStyle();
-    Updater::CheckUpdate();
+EditorMgr Editor;
+EditorMgr::EditorMgr() {
 
-    // Load config data
-    Viewport::m_nMoveSpeed = gConfig.Get("editor.moveSpeed", 1.0f);
-    Interface::Init();
+    uint gameVersion = GetGameVersion();
+    if (gameVersion != GAME_10US_HOODLUM && gameVersion == GAME_10US_COMPACT)
+    {
+        MessageBox(HWND_DESKTOP, "Unknown game version. GTA SA v1.0 US is required.", "CheatMenu", MB_ICONERROR);
+        return;
+    }
+   
+    Events::initRwEvent.before += [this]() {
+        D3dHook::Init(fArgNoneWrapper(Editor.Process));
+        ApplyStyle();
+    };
 
-    Events::processScriptsEvent += []() {
+    Events::initGameEvent += []() {
+        if (!std::filesystem::is_directory(PLUGIN_PATH((char*)FILE_NAME))) {
+            std::string msg = std::format("{} folder not found. You need to put both '{}.asi' & '{}' folder in the same directory", FILE_NAME, FILE_NAME, FILE_NAME);
+            Log::Print<eLogLevel::Error>(msg.c_str());
+            MessageBox(NULL, msg.c_str(), FILE_NAME, MB_ICONERROR);
+            return;
+        }
+
+        if (!GetModuleHandle("SilentPatchSA.asi")) {
+            Log::Print<eLogLevel::Error>("SilentPatch not found. Please install it from here https://gtaforums.com/topic/669045-silentpatch/");
+            int msgID = MessageBox(NULL, "SilentPatch not found. Do you want to install Silent Patch? (Game restart required)", FILE_NAME, MB_OKCANCEL | MB_DEFBUTTON1);
+
+            if (msgID == IDOK) {
+                OPEN_LINK("https://gtaforums.com/topic/669045-silentpatch/");
+            };
+            return;
+        }
+
+        Log::Print<eLogLevel::None>("Starting " EDITOR_TITLE " (" __DATE__ ")\nAuthor: Grinch_\nDiscord: "
+                                    DISCORD_INVITE "\nPatreon: " PATREON_LINK "\nMore Info: " GITHUB_LINK "\n");
+
+        // date time
+        SYSTEMTIME st;
+        GetSystemTime(&st);
+        Log::Print<eLogLevel::None>("Date: {}-{}-{} Time: {}:{}\n", st.wYear, st.wMonth, st.wDay,
+                                    st.wHour, st.wMinute);
+
+        bool modloader = GetModuleHandle("modloader.asi");
+        const char *path = PLUGIN_PATH((char*)"");
+        Log::Print<eLogLevel::None>("Install location: {}", modloader && strstr(path, "modloader") ? "Modloader" : "Game directory");
+        Log::Print<eLogLevel::None>("FLA installed: {}", GetModuleHandle("$fastman92limitAdjuster.asi") ? "True" : "False");
+        Log::Print<eLogLevel::None>("Modloader installed: {}", modloader ? "True" : "False");
+        Log::Print<eLogLevel::None>("OLA installed: {}", GetModuleHandle("III.VC.SA.LimitAdjuster.asi") ? "True" : "False");
+        Log::Print<eLogLevel::None>("Renderhook installed: {}", GetModuleHandle("_gtaRenderHook.asi") ? "True" : "False");
+        Log::Print<eLogLevel::None>("");
+
+        // Checking for updates once a day
+        if (gConfig.Get("Menu.LastUpdateChecked", 0) != st.wDay) {
+            Updater::CheckUpdate();
+            gConfig.Set("Menu.LastUpdateChecked", st.wDay);
+        }
+
+        if (Updater::IsUpdateAvailable()) {
+            Log::Print<eLogLevel::Info>("New update available: %s", Updater::GetUpdateVersion().c_str());
+        }
+
+        if (!std::filesystem::exists(PLUGIN_PATH((char*)FILE_NAME))) {
+            Log::Print<eLogLevel::Error>("Failed to find MapEditor directory!");
+            return;
+        }
+    };
+
+    Events::processScriptsEvent += [this]() {
         if (toggleUIKey.Pressed()) {
-            Interface::Interface::m_bShowGUI = !Interface::Interface::m_bShowGUI;
+            Interface.m_bShowGUI = !Interface.m_bShowGUI;
         }
 
         if (copyHoveredObjName.Pressed()) {
-            std::string name = ObjManager::FindNameFromModel(Viewport::m_HoveredEntity->m_nModelIndex);
+            std::string name = ObjMgr.FindNameFromModel(Viewport.m_HoveredEntity->m_nModelIndex);
             ImGui::SetClipboardText(name.c_str());
             CHud::SetHelpMessage("Copied to clipboard", false, false, false);
         }
 
-        if (editorOpenKey.Pressed() && !Interface::m_bInputLocked) {
+        if (editorOpenKey.Pressed() && !Interface.m_bInputLocked) {
             m_bOpened = !m_bOpened;
 
             if (m_bOpened) {
-                if (Interface::m_bAutoTpToLoc) {
+                if (Interface.m_bAutoTpToLoc) {
                     CVector pos;
                     pos.x = gConfig.Get("editor.tp.X", -1.0f);
                     pos.y = gConfig.Get("editor.tp.Y", -1.0f);
                     pos.z = gConfig.Get("editor.tp.Z", -1.0f);
 
                     if (pos.x != -1.0f) {
-                        Viewport::SetCameraPosn(pos);
+                        Viewport.SetCameraPosn(pos);
                     }
                 }
             } else {
-                Editor::Cleanup();
+                Cleanup();
             }
         }
     };
@@ -57,23 +114,23 @@ void Editor::Init() {
     };
 };
 
-void Editor::Cleanup() {
+void EditorMgr::Cleanup() {
     D3dHook::SetMouseState(false);
+    Viewport.Cleanup();
     gConfig.Save();
-    Viewport::Cleanup();
 }
 
-void Editor::Draw() {
+void EditorMgr::Process() {
     static bool bTriedtoHideCursor;
     if (!FrontEndMenuManager.m_bMenuActive) {
         if (m_bOpened) {
-            if (Viewport::m_eState == eViewportState::Edit) {
+            if (Viewport.m_eState == eViewportState::Edit) {
                 D3dHook::SetMouseState(true);
                 bTriedtoHideCursor = false;
             }
-            Interface::m_bInputLocked = false;
+            Interface.m_bInputLocked = false;
 
-            if (Interface::m_bAutoSave && ObjManager::m_pPlacedObjs.size() > 0) {
+            if (Interface.m_bAutoSave && ObjectMgr::m_pPlacedObjs.size() > 0) {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
 
@@ -82,8 +139,8 @@ void Editor::Draw() {
                     timer = curTimer;
                 }
             }
-            Interface::Process();
-            Viewport::Process();
+            Interface.Process();
+            Viewport.Process();
         }
     } else {
         if (!bTriedtoHideCursor) {
@@ -94,7 +151,7 @@ void Editor::Draw() {
     }
 }
 
-void Editor::ApplyStyle() {
+void EditorMgr::ApplyStyle() {
     ImGuiStyle* style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
 

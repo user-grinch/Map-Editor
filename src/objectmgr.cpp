@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "editor.h"
-#include "objmanager.h"
+#include "objectmgr.h"
+#include "filemgr.h"
+#include "interface.h"
+#include "defines.h"
 #include <CRenderer.h>
 #include <CModelInfo.h>
 #include <filesystem>
-#include "filemgr.h"
-#include "interface.h"
+#include "editor.h"
 
 /*
 *  Part of the source is taken from DrawColsSA by Sergeanur
@@ -16,7 +18,7 @@ static void RenderLineWithClipping(float x1, float y1, float z1, float x2, float
     ((void (__cdecl *)(float, float, float, float, float, float, unsigned int, unsigned int))0x6FF4F0)(x1, y1, z1, x2, y2, z2, c1, c2);
 }
 
-float ObjManager::GetBoundingBoxGroundZ(CObject *pObj) {
+float ObjectMgr::GetBoundingBoxGroundZ(CObject *pObj) {
     if (!pObj) {
         return 0.0f;
     }
@@ -34,7 +36,8 @@ float ObjManager::GetBoundingBoxGroundZ(CObject *pObj) {
     return ground.z;
 }
 
-void ObjManager::Init() {
+ObjectMgr ObjMgr;
+ObjectMgr::ObjectMgr() {
     // ---------------------------------------------------
     // optimizations
     m_vecModelNames.reserve(50);
@@ -83,11 +86,11 @@ void ObjManager::Init() {
 
     // Modloader
     // We're only loading from ModLoader/MapEditor directory.
-    FileMgr::ImportIDE(PLUGIN_PATH((char*)"\\modloader\\MapEditor\\"));
+    FileMgr::ImportIDE(PLUGIN_PATH((char*)"\\modloader\\"FILE_NAME"\\"));
     // ---------------------------------------------------
 }
 
-std::string ObjManager::FindNameFromModel(int model) {
+std::string ObjectMgr::FindNameFromModel(int model) {
     for (auto &data : m_vecModelNames) {
         for (auto &iplData : data.second) {
             if (iplData.first == model) {
@@ -98,8 +101,8 @@ std::string ObjManager::FindNameFromModel(int model) {
     return "dummy";
 }
 
-void ObjManager::HighlightObject(CObject *pObj) {
-    if (!pObj || !Editor::IsOpen()) {
+void ObjectMgr::HighlightObject(CObject *pObj) {
+    if (!pObj || !Editor.IsOpen()) {
         return;
     }
 
@@ -124,7 +127,7 @@ void ObjManager::HighlightObject(CObject *pObj) {
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
     RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
 
-    if (Interface::m_bDrawBoundingBox) {
+    if (Interface.m_bDrawBoundingBox) {
         CVector min = pColModel->m_boundBox.m_vecMin;
         CVector max = pColModel->m_boundBox.m_vecMax;
 
@@ -174,9 +177,9 @@ void ObjManager::HighlightObject(CObject *pObj) {
         RenderLineWithClipping(v7.x, v7.y, v7.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
     }
 
-    if (ObjManager::m_pSelected && Interface::m_bDrawAxisLines) {
+    if (ObjectMgr::m_pSelected && Interface.m_bDrawAxisLines) {
         static float length = 300.0f;
-        RwV3d pos = ObjManager::m_pSelected->GetPosition().ToRwV3d();
+        RwV3d pos = ObjectMgr::m_pSelected->GetPosition().ToRwV3d();
 
         RenderLineWithClipping(pos.x - length, pos.y, pos.z, pos.x + length, pos.y, pos.z, 0xFF0000FF, 0xFF0000FF);
         RenderLineWithClipping(pos.x, pos.y - length, pos.z, pos.x, pos.y + length, pos.z, 0x00FF00FF, 0x00FF00FF);
@@ -190,7 +193,7 @@ void ObjManager::HighlightObject(CObject *pObj) {
     RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
 }
 
-void ObjManager::ExData::SetRotation(CVector rot, bool quat) {
+void ExData::SetRotation(CVector rot, bool quat) {
     m_vecRot = rot;
     Command<Commands::SET_OBJECT_ROTATION>(handle, rot.x, rot.y, rot.z);
 
@@ -202,14 +205,14 @@ void ObjManager::ExData::SetRotation(CVector rot, bool quat) {
     }
 }
 
-CVector ObjManager::ExData::GetRotation() {
+CVector ExData::GetRotation() {
     return m_vecRot;
 }
 
-ObjManager::ExData::QUAT ObjManager::ExData::GetQuat() {
+ExData::QUAT ExData::GetQuat() {
     return m_fQuat;
 }
 
-void ObjManager::ExData::SetQuat(ObjManager::ExData::QUAT quat) {
+void ExData::SetQuat(ExData::QUAT quat) {
     m_fQuat = quat;
 }

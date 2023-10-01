@@ -1,18 +1,31 @@
 #pragma once
 #include "pch.h"
 
-class Editor {
+/*
+  Editor Manager Class
+  The Super Class that handles & initiates everything
+  Execution starts here.
+*/
+class EditorMgr {
   private:
-    static void ApplyStyle();
-    static inline bool m_bOpened; // Is the editor being shown
+    void ApplyStyle();
+    bool m_bOpened; // Is the editor currently open
+
+    // Does basic cleaup to close the MapEditor
+    void Cleanup();
 
   public:
+    EditorMgr();
+    EditorMgr(EditorMgr&);
 
-    Editor() = delete;
-    Editor(Editor&) = delete;
+    // Returns true if the MapEditor is open
+    bool IsOpen();
 
-    static void Init();
-    static bool IsOpen();
-    static void Draw();
-    static void Cleanup();
+    /* 
+      Processes the MapEditor code
+      Handles drawing & controls
+    */
+    void Process();
 };
+
+extern EditorMgr Editor;
