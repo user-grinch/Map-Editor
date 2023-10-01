@@ -2,103 +2,82 @@
 #include "editor.h"
 #include "viewport.h"
 #include "interface.h"
-#include "utils.h"
+#include "utils/utils.h"
 #include "objmanager.h"
-#include "hotkeys.h"
 #include <CHud.h>
 #include <CMenuManager.h>
 #include "filemgr.h"
 
-bool Editor::IsOpen()
-{
+bool Editor::IsOpen() {
     return m_bOpened;
 }
 
-void Editor::Init()
-{
-    D3dHook::InjectHook(&Draw);
+void Editor::Init() {
+    D3dHook::Init(&Draw);
     ApplyStyle();
     Updater::CheckUpdate();
 
     // Load config data
-    Viewport::m_nMoveSpeed = gConfig.GetValue("editor.moveSpeed", 1.0f);
-    FontMgr::SetMultiplier(gConfig.GetValue("editor.fontMul", 1.0f));
+    Viewport::m_nMoveSpeed = gConfig.Get("editor.moveSpeed", 1.0f);
     Interface::Init();
 
-    Events::processScriptsEvent += []()
-    {
-        if (toggleUIKey.Pressed())
-        {
+    Events::processScriptsEvent += []() {
+        if (toggleUIKey.Pressed()) {
             Interface::Interface::m_bShowGUI = !Interface::Interface::m_bShowGUI;
         }
 
-        if (copyHoveredObjName.Pressed())
-        {
+        if (copyHoveredObjName.Pressed()) {
             std::string name = ObjManager::FindNameFromModel(Viewport::m_HoveredEntity->m_nModelIndex);
             ImGui::SetClipboardText(name.c_str());
             CHud::SetHelpMessage("Copied to clipboard", false, false, false);
         }
 
-        if (editorOpenKey.Pressed() && !Interface::m_bInputLocked)
-        {
+        if (editorOpenKey.Pressed() && !Interface::m_bInputLocked) {
             m_bOpened = !m_bOpened;
 
-            if (m_bOpened)
-            {
-                if (Interface::m_bAutoTpToLoc)
-                {
+            if (m_bOpened) {
+                if (Interface::m_bAutoTpToLoc) {
                     CVector pos;
-                    pos.x = gConfig.GetValue("editor.tp.X", -1.0f);
-                    pos.y = gConfig.GetValue("editor.tp.Y", -1.0f);
-                    pos.z = gConfig.GetValue("editor.tp.Z", -1.0f);
+                    pos.x = gConfig.Get("editor.tp.X", -1.0f);
+                    pos.y = gConfig.Get("editor.tp.Y", -1.0f);
+                    pos.z = gConfig.Get("editor.tp.Z", -1.0f);
 
-                    if (pos.x != -1.0f)
-                    {
+                    if (pos.x != -1.0f) {
                         Viewport::SetCameraPosn(pos);
                     }
                 }
-            }
-            else
-            {
+            } else {
                 Editor::Cleanup();
             }
         }
     };
 
-    Events::shutdownRwEvent += []()
-    {
-        gConfig.WriteToDisk();
+    Events::shutdownRwEvent += []() {
+        gConfig.Save();
     };
 };
 
-void Editor::Cleanup()
-{
+void Editor::Cleanup() {
     D3dHook::SetMouseState(false);
-    gConfig.WriteToDisk();
+    gConfig.Save();
     Viewport::Cleanup();
 }
 
-void Editor::Draw()
-{
+void Editor::Draw() {
     static bool bTriedtoHideCursor;
-    if (!FrontEndMenuManager.m_bMenuActive)
-    {
-        if (m_bOpened)
-        {
-            if (Viewport::m_eState == eViewportState::Edit)
-            {
+    if (!FrontEndMenuManager.m_bMenuActive) {
+        if (m_bOpened) {
+            if (Viewport::m_eState == eViewportState::Edit) {
                 D3dHook::SetMouseState(true);
                 bTriedtoHideCursor = false;
             }
             Interface::m_bInputLocked = false;
 
-            if (Interface::m_bAutoSave && ObjManager::m_pPlacedObjs.size() > 0)
-            {
+            if (Interface::m_bAutoSave && ObjManager::m_pPlacedObjs.size() > 0) {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
 
-                if (curTimer - timer > 60000)
-                {
+                if (curTimer - timer > 60000) {
                     FileMgr::ExportIPL("auto_save.ipl");
                     timer = curTimer;
                 }
@@ -106,20 +85,16 @@ void Editor::Draw()
             Interface::Process();
             Viewport::Process();
         }
-    }
-    else
-    {
-        if (!bTriedtoHideCursor)
-        {
+    } else {
+        if (!bTriedtoHideCursor) {
             D3dHook::SetMouseState(false);
-            gConfig.WriteToDisk();
+            gConfig.Save();
             bTriedtoHideCursor = true;
         }
     }
 }
 
-void Editor::ApplyStyle()
-{
+void Editor::ApplyStyle() {
     ImGuiStyle* style = &ImGui::GetStyle();
     ImVec4* colors = style->Colors;
 

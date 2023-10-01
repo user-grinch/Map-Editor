@@ -12,15 +12,12 @@
 *  https://github.com/Sergeanur/
 */
 
-static void RenderLineWithClipping(float x1, float y1, float z1, float x2, float y2, float z2, unsigned int c1, unsigned int c2)
-{
+static void RenderLineWithClipping(float x1, float y1, float z1, float x2, float y2, float z2, unsigned int c1, unsigned int c2) {
     ((void (__cdecl *)(float, float, float, float, float, float, unsigned int, unsigned int))0x6FF4F0)(x1, y1, z1, x2, y2, z2, c1, c2);
 }
 
-float ObjManager::GetBoundingBoxGroundZ(CObject *pObj)
-{
-    if (!pObj)
-    {
+float ObjManager::GetBoundingBoxGroundZ(CObject *pObj) {
+    if (!pObj) {
         return 0.0f;
     }
     CMatrix *matrix = pObj->GetMatrix();
@@ -37,8 +34,7 @@ float ObjManager::GetBoundingBoxGroundZ(CObject *pObj)
     return ground.z;
 }
 
-void ObjManager::Init()
-{
+void ObjManager::Init() {
     // ---------------------------------------------------
     // optimizations
     m_vecModelNames.reserve(50);
@@ -47,8 +43,7 @@ void ObjManager::Init()
     // ---------------------------------------------------
     // highlight selected object
     CdeclEvent <AddressList<0x53E222, H_CALL>, PRIORITY_AFTER,  ArgPickNone, void()>renderEffects;
-    renderEffects +=[]()
-    {
+    renderEffects +=[]() {
         HighlightObject(m_pSelected);
     };
 
@@ -62,17 +57,12 @@ void ObjManager::Init()
     static bool skip;
 
     CdeclEvent <AddressList<0x5B8428, H_CALL>, PRIORITY_BEFORE,  ArgPick2N<char*, 0, char*, 1>, void(char *a1, char* a2)>openCall;
-    openCall += [](char *a1, char *a2)
-    {
+    openCall += [](char *a1, char *a2) {
         lastIdeName = std::filesystem::path(a1).stem().string();
-        if (lastIdeName == "DEFAULT" || lastIdeName == "vehicles" || lastIdeName == "peds") // these two has vehicle entries
-        {
+        if (lastIdeName == "DEFAULT" || lastIdeName == "vehicles" || lastIdeName == "peds") { // these two has vehicle entries
             skip = true;
-        }
-        else
-        {
-            if (tempVec.size() > 0)
-            {
+        } else {
+            if (tempVec.size() > 0) {
                 m_vecModelNames.push_back({std::move(lastIdeName), std::move(tempVec)});
             }
             skip = false;
@@ -80,10 +70,8 @@ void ObjManager::Init()
     };
 
     CdeclEvent <AddressList<0x5B85DD, H_CALL>, PRIORITY_AFTER,  ArgPickN<char*, 0>, void(char *str)>loadIdeEvent;
-    loadIdeEvent += [](char *str)
-    {
-        if (!skip)
-        {
+    loadIdeEvent += [](char *str) {
+        if (!skip) {
             int model, unk2;
             char dffName[32], txdName[32];
             float unk;
@@ -99,14 +87,10 @@ void ObjManager::Init()
     // ---------------------------------------------------
 }
 
-std::string ObjManager::FindNameFromModel(int model)
-{
-    for (auto &data : m_vecModelNames)
-    {
-        for (auto &iplData : data.second)
-        {
-            if (iplData.first == model)
-            {
+std::string ObjManager::FindNameFromModel(int model) {
+    for (auto &data : m_vecModelNames) {
+        for (auto &iplData : data.second) {
+            if (iplData.first == model) {
                 return iplData.second;
             }
         }
@@ -114,39 +98,33 @@ std::string ObjManager::FindNameFromModel(int model)
     return "dummy";
 }
 
-void ObjManager::HighlightObject(CObject *pObj)
-{
-    if (!pObj || !Editor::IsOpen())
-    {
+void ObjManager::HighlightObject(CObject *pObj) {
+    if (!pObj || !Editor::IsOpen()) {
         return;
     }
 
     CMatrix *matrix = pObj->GetMatrix();
-    if (!matrix)
-    {
+    if (!matrix) {
         return;
     }
 
     unsigned short index = pObj->m_nModelIndex;
-    if (!CModelInfo::ms_modelInfoPtrs[index])
-    {
+    if (!CModelInfo::ms_modelInfoPtrs[index]) {
         return;
     }
 
     CColModel *pColModel = CModelInfo::ms_modelInfoPtrs[index]->m_pColModel;
-    if (!pColModel)
-    {
+    if (!pColModel) {
         return;
     }
 
-     RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
     RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
     RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
     RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
     RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
 
-    if (Interface::m_bDrawBoundingBox)
-    {
+    if (Interface::m_bDrawBoundingBox) {
         CVector min = pColModel->m_boundBox.m_vecMin;
         CVector max = pColModel->m_boundBox.m_vecMax;
 
@@ -196,8 +174,7 @@ void ObjManager::HighlightObject(CObject *pObj)
         RenderLineWithClipping(v7.x, v7.y, v7.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
     }
 
-    if (ObjManager::m_pSelected && Interface::m_bDrawAxisLines)
-    {
+    if (ObjManager::m_pSelected && Interface::m_bDrawAxisLines) {
         static float length = 300.0f;
         RwV3d pos = ObjManager::m_pSelected->GetPosition().ToRwV3d();
 
@@ -213,32 +190,26 @@ void ObjManager::HighlightObject(CObject *pObj)
     RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
 }
 
-void ObjManager::ExData::SetRotation(CVector rot, bool quat)
-{
+void ObjManager::ExData::SetRotation(CVector rot, bool quat) {
     m_vecRot = rot;
     Command<Commands::SET_OBJECT_ROTATION>(handle, rot.x, rot.y, rot.z);
 
-    if (quat)
-    {
-        if (!pObj->m_pRwObject)
-        {
+    if (quat) {
+        if (!pObj->m_pRwObject) {
             pObj->CreateRwObject();
         }
         Command<Commands::GET_OBJECT_QUATERNION>(handle, &m_fQuat.x, &m_fQuat.y, &m_fQuat.z, &m_fQuat.w);
     }
 }
 
-CVector ObjManager::ExData::GetRotation()
-{
+CVector ObjManager::ExData::GetRotation() {
     return m_vecRot;
 }
 
-ObjManager::ExData::QUAT ObjManager::ExData::GetQuat()
-{
+ObjManager::ExData::QUAT ObjManager::ExData::GetQuat() {
     return m_fQuat;
 }
 
-void ObjManager::ExData::SetQuat(ObjManager::ExData::QUAT quat)
-{
+void ObjManager::ExData::SetQuat(ObjManager::ExData::QUAT quat) {
     m_fQuat = quat;
 }

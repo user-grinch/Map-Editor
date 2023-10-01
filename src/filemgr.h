@@ -1,8 +1,7 @@
 #pragma once
 
-class FileMgr
-{
-public:
+class FileMgr {
+  public:
     FileMgr() = delete;
     FileMgr(FileMgr&) = delete;
 

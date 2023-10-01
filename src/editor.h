@@ -1,13 +1,12 @@
 #pragma once
 #include "pch.h"
 
-class Editor
-{
-private:
+class Editor {
+  private:
     static void ApplyStyle();
     static inline bool m_bOpened; // Is the editor being shown
 
-public:
+  public:
 
     Editor() = delete;
     Editor(Editor&) = delete;

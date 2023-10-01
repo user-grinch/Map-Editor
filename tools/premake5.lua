@@ -4,8 +4,8 @@
 ----------------------------
 -- Environment vars
 PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
-GTASA_DIR = "F:/GTASanAndreas"
-DX9SDK_DIR = os.getenv("DIRECTX9_SDK_DIR")
+GTASA_DIR = "D:/Games/GTA San Andreas"
+DX9SDK_DIR = os.getenv("DXSDK_DIR")
 
 if (DX9SDK_DIR == nil) then
     error("DIRECTX9_SDK_DIR environment variable not set")
@@ -31,11 +31,11 @@ workspace "MapEditorSA"
         targetdir "../build/bin"
 
         files { 
-            "../depend/**",
-            "../depend/**.h", 
-            "../depend/**.hpp", 
-            "../depend/**.c", 
-            "../depend/**.cpp" 
+            "../include/**",
+            "../include/**.h", 
+            "../include/**.hpp", 
+            "../include/**.c", 
+            "../include/**.cpp" 
         }
         libdirs (PSDK_DIR .. "/output/lib")
 
@@ -48,7 +48,7 @@ workspace "MapEditorSA"
             optimize "On"
 
 
-    project "MapEditor"
+    project "MapEditorSA"
         kind "SharedLib"
         targetdir (GTASA_DIR)
         targetextension ".asi"
@@ -59,13 +59,17 @@ workspace "MapEditorSA"
             "../src/**.cpp" 
         }
         includedirs {
+            "../include/",
             PSDK_DIR .. "/plugin_sa/",
             PSDK_DIR .. "/plugin_sa/game_sa/",
             PSDK_DIR .. "/shared/",
             PSDK_DIR .. "/shared/game/",
             DX9SDK_DIR .. "/Include"
         }
-        libdirs (PSDK_DIR .. "/output/lib")
+        libdirs {
+            PSDK_DIR .. "/output/lib",
+            DX9SDK_DIR .. "/lib/x86"
+        }
         
         defines { 
             "NDEBUG", 

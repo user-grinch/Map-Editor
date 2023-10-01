@@ -74,6 +74,9 @@
         "xtr1common": "cpp",
         "xtree": "cpp",
         "xutility": "cpp",
-        "*.def": "cpp"
+        "*.def": "cpp",
+        "codecvt": "cpp",
+        "coroutine": "cpp",
+        "variant": "cpp"
     }
 }

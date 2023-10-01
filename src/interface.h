@@ -1,9 +1,8 @@
 #pragma once
 #include "pch.h"
 
-class Interface
-{
-private:
+class Interface {
+  private:
     static inline ResourceStore m_locData{ "locations", eResourceType::TYPE_TEXT };
 
     // Draws the top black bar contains menu options
@@ -15,13 +14,13 @@ private:
     // Draws the popups at the center of the screen
     static void DrawPopupMenu();
 
-public:
+  public:
     static inline bool m_bAutoSave = true;
     static inline bool m_bAutoTpToLoc;
     static inline bool m_bAutoSnapToGround;
     static inline bool m_bDrawAxisLines;
     static inline bool m_bDrawBoundingBox; // bouding box around selected objects
-    static inline bool m_bInputLocked; 
+    static inline bool m_bInputLocked;
     static inline bool m_bShowFPS;
     static inline bool m_bShowGUI = true;
     static inline bool m_bShowHoverMenu; // object hoverer tooltip ( shows model id & model name )
@@ -33,11 +32,11 @@ public:
     static inline ContextMenu m_ContextMenu; // right click context menu
     static inline PopupMenu m_PopupMenu; // center screen popup menus
     static inline ResourceStore m_favData{ "favourites", eResourceType::TYPE_TEXT };
-    
+
 
     Interface() = delete;
     Interface(Interface&) = delete;
-    
+
     // Initiazes stuff for MapEditor open
     static void Init();
 

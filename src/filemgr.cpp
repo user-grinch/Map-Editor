@@ -1,32 +1,26 @@
 #include "pch.h"
 #include "filemgr.h"
 #include "objmanager.h"
-#include "utils.h"
+#include "utils/utils.h"
+#include "defines.h"
 #include <fstream>
 #include <CHud.h>
 
-void FileMgr::ImportIDE(std::string path, bool logImports)
-{
-    if (std::filesystem::exists(path))
-    {
-        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path))
-        {
-            if (dirEntry.path().extension() == ".ide")
-            {
+void FileMgr::ImportIDE(std::string path, bool logImports) {
+    if (std::filesystem::exists(path)) {
+        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
+            if (dirEntry.path().extension() == ".ide") {
                 std::ifstream file(dirEntry.path());
                 std::string line;
                 std::vector<std::pair<int, std::string>> temp;
 
-                while (std::getline(file, line))
-                {
-                    if (line.starts_with("#"))
-                    {
+                while (std::getline(file, line)) {
+                    if (line.starts_with("#")) {
                         continue;
                     }
 
-                    if (logImports)
-                    {
-                        gLog << "Pasing line: " << line << std::endl;
+                    if (logImports) {
+                        Log::Print<eLogLevel::Debug>("Parsing line: %s\n", line);
                     }
 
                     int model, unk2;
@@ -34,11 +28,9 @@ void FileMgr::ImportIDE(std::string path, bool logImports)
                     float unk;
                     int rtn = sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
 
-                    if (rtn == 2)
-                    {
+                    if (rtn == 2) {
                         char *c = strchr(dffName, ',');
-                        if (c)
-                        {
+                        if (c) {
                             *c = '\0';
                         }
                         temp.push_back({model, std::string(dffName)});
@@ -52,11 +44,10 @@ void FileMgr::ImportIDE(std::string path, bool logImports)
     }
 }
 
-void FileMgr::ImportIPL(std::string fileName, bool logImports)
-{
+void FileMgr::ImportIPL(std::string fileName, bool logImports) {
     static int counter = 0;
     std::fstream file;
-    std::string fullPath = PLUGIN_PATH((char*)"MapEditor/") + fileName;
+    std::string fullPath = PLUGIN_PATH((char*)FILE_NAME"/") + fileName;
     file.open(fullPath.c_str(), std::ios::in);
     std::string line;
 
@@ -65,19 +56,15 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports)
     CVector pos;
     float rx, ry, rz, rw;
 
-    while (getline(file, line))
-    {
-        for(char& c : line )
-        {
+    while (getline(file, line)) {
+        for(char& c : line ) {
             if( c == ',' ) c = ' ' ;
         }
 
         if (sscanf(line.c_str(), "%d %s %d %f %f %f %f %f %f %f %d", &model, modelName, &interior,
-                   &pos.x, &pos.y, &pos.z, &rx, &ry, &rz, &rw, &unk) == 11)
-        {
-            if (logImports)
-            {
-                gLog << "Pasing line: " << line << std::endl;
+                   &pos.x, &pos.y, &pos.z, &rx, &ry, &rz, &rw, &unk) == 11) {
+            if (logImports) {
+                Log::Print<eLogLevel::Debug>("Parsing line: %s\n", line);
             }
 
             int hObj;
@@ -114,13 +101,11 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports)
     CHud::SetHelpMessage("IPL imported", false, false, false);
 }
 
-void FileMgr::ExportIPL(const char* fileName)
-{
+void FileMgr::ExportIPL(const char* fileName) {
     std::fstream file;
-    file.open(std::string(PLUGIN_PATH((char*)"MapEditor/")) + fileName, std::ios::out);
+    file.open(std::string(PLUGIN_PATH((char*)FILE_NAME"/")) + fileName, std::ios::out);
     file << "# Generated using Map Editor by Grinch_\ninst" << std::endl;
-    for (CObject *pObj : ObjManager::m_pPlacedObjs)
-    {
+    for (CObject *pObj : ObjManager::m_pPlacedObjs) {
         int model = pObj->m_nModelIndex;
         auto &data = ObjManager::m_objData.Get(pObj);
         CVector pos;
