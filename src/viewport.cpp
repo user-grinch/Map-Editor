@@ -499,8 +499,9 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
     if (ImGui::MenuItem("Add to favourites")) {
         int model = Viewport.m_HoveredEntity->m_nModelIndex;
         std::string keyName = std::to_string(model) + " - " + ObjectMgr::FindNameFromModel(model);
-        Interface.m_favData.m_pData->Set(std::format("All.{}", keyName).c_str(), model);
+        Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
         Interface.m_favData.m_pData->Save();
+        Interface.m_favData.UpdateSearchList();
         CHud::SetHelpMessage("Added to favourites", false, false, false);
         Interface.m_ContextMenu.m_bShow = false;
     }

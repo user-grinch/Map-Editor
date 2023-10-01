@@ -16,8 +16,9 @@ void ContextMenu_Search(std::string& root, std::string& key, std::string& value)
     if (ImGui::MenuItem("Add to favourites")) {
         int model = std::stoi(value);
         std::string keyName = value + " - " + ObjectMgr::FindNameFromModel(model);
-        Interface.m_favData.m_pData->Set(std::format("All.{}", keyName).c_str(), model);
+        Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
         Interface.m_favData.m_pData->Save();
+        Interface.m_favData.UpdateSearchList();
         CHud::SetHelpMessage("Added to favourites", false, false, false);
     };
 
@@ -29,7 +30,7 @@ void ContextMenu_Search(std::string& root, std::string& key, std::string& value)
 
 
 void ImportPopup() {
-    std::filesystem::path path = PLUGIN_PATH((char*)"/MapEditor/");
+    std::filesystem::path path = PLUGIN_PATH((char*)"/"FILE_NAME"/");
     if (std::filesystem::exists(path)) {
         ImGui::Spacing();
         ImGui::Text("Info,");
@@ -543,19 +544,6 @@ void InterfaceMgr::DrawMainMenuBar() {
                 ImGui::EndMenu();
             }
             ImGui::Dummy(ImVec2(0, 10));
-            static float mul = 1;
-            static bool sliderClicked = false;
-            ImGui::Text("Font multip");
-            ImGui::SameLine();
-            ImGui::Spacing();
-            ImGui::SameLine();
-            if (ImGui::SliderFloat("##FontMul", &mul, 1, 5)) {
-                sliderClicked = true;
-            }
-            if (ImGui::IsMouseReleased(0) && sliderClicked) {
-                gConfig.Set("editor.fontMul", mul);
-                sliderClicked = false;
-            }
             ImGui::Spacing();
             int hour = CClock::ms_nGameClockHours;
             int minute = CClock::ms_nGameClockMinutes;
@@ -629,7 +617,7 @@ void InterfaceMgr::DrawSidepanel() {
     // ---------------------------------------------------
     // do calcualtes for pos & size
     float width = screen::GetScreenWidth();
-    float menuWidth = width/5.0f;
+    float menuWidth = width/4.8f;
     float frameHeight = ImGui::GetFrameHeight();
     ImGui::SetNextWindowPos(ImVec2(width-menuWidth+1.0f, frameHeight));
     ImGui::SetNextWindowSize(ImVec2(menuWidth, screen::GetScreenHeight()-frameHeight));
@@ -761,84 +749,65 @@ void InterfaceMgr::DrawSidepanel() {
             if(ImGui::BeginTabItem("Objects")) {
                 ImGui::Spacing();
                 if (ImGui::BeginTabBar("OBJBAR")) {
-                    if(ImGui::BeginTabItem("All")) {
-                        static bool bShowAnyway;
+                    if(ImGui::BeginTabItem("Placed")) {
                         static ImGuiTextFilter filter;
-
                         ImGui::Spacing();
                         if (ObjectMgr::m_pPlacedObjs.size() == 0) {
-                            ImGui::TextWrapped("You haven't placed any objects yet!");
+                            Widget::TextCentered("You haven't placed any objects yet!");
                         } else {
-                            if (ImGui::Button("Remove All", Utils::GetSize(bShowAnyway ? 2 : 1))) {
+                            if (ImGui::Button("Remove All", Utils::GetSize(1))) {
                                 for (auto &pObj : ObjectMgr::m_pPlacedObjs) {
                                     pObj->Remove();
                                 }
                                 ObjectMgr::m_pSelected = nullptr;
                                 ObjectMgr::m_pPlacedObjs.clear();
                             }
-
-                            if (ObjectMgr::m_pPlacedObjs.size() > 500) {
-                                if (bShowAnyway) {
-                                    ImGui::SameLine();
-                                    if (ImGui::Button("Hide list", Utils::GetSize(2))) {
-                                        bShowAnyway = false;
-                                    }
-                                } else {
-                                    ImGui::Spacing();
-                                    ImGui::TextWrapped("You've placed more than 500 objects. The list has been hidden to avoid performance issues.");
-                                    ImGui::Spacing();
-                                    if (ImGui::Button("Show anyway", Utils::GetSize())) {
-                                        bShowAnyway = true;
-                                    }
-                                }
+                        
+                            ImGui::Spacing();
+                            ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth());
+                            Widget::Filter("##Search", filter, "Search");
+                            if (ImGui::IsItemActive()) {
+                                m_bInputLocked = true;
                             }
                             ImGui::Spacing();
+                            if (ImGui::BeginChild("Objects child")) {
+                                for (size_t i = 0; i < ObjectMgr::m_pPlacedObjs.size(); i++) {
+                                    CObject *pObj = ObjectMgr::m_pPlacedObjs[i];
+                                    auto &data = ObjectMgr::m_objData.Get(pObj);
 
-                            if (ObjectMgr::m_pPlacedObjs.size() < 500 || bShowAnyway) {
-                                filter.Draw("Search");
-                                if (ImGui::IsItemActive()) {
-                                    m_bInputLocked = true;
-                                }
-                                ImGui::Spacing();
-                                if (ImGui::BeginChild("Objects child")) {
-                                    for (size_t i = 0; i < ObjectMgr::m_pPlacedObjs.size(); i++) {
-                                        CObject *pObj = ObjectMgr::m_pPlacedObjs[i];
-                                        auto &data = ObjectMgr::m_objData.Get(pObj);
-
-                                        if (data.m_modelName == "") {
-                                            data.m_modelName = ObjectMgr::FindNameFromModel(pObj->m_nModelIndex);
-                                        }
-                                        char buf[32];
-                                        sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
-
-                                        if (filter.PassFilter(buf) && ImGui::MenuItem(buf)) {
-                                            // Setting the camera pos to bounding box
-                                            CMatrix *matrix = pObj->GetMatrix();
-                                            CColModel *pColModel = pObj->GetColModel();
-                                            CVector min = pColModel->m_boundBox.m_vecMin;
-                                            CVector max = pColModel->m_boundBox.m_vecMax;
-
-                                            CVector workVec = min;
-                                            workVec.x = max.x;
-                                            workVec.z = max.z;
-                                            CVector vec = *matrix * workVec;
-
-                                            // TODO: Rotate the camera to face the object
-
-                                            Viewport.SetCameraPosn(vec);
-                                            ObjectMgr::m_pSelected = pObj;
-                                        }
+                                    if (data.m_modelName == "") {
+                                        data.m_modelName = ObjectMgr::FindNameFromModel(pObj->m_nModelIndex);
                                     }
+                                    char buf[32];
+                                    sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
 
-                                    ImGui::EndChild();
+                                    if (filter.PassFilter(buf) && ImGui::MenuItem(buf)) {
+                                        // Setting the camera pos to bounding box
+                                        CMatrix *matrix = pObj->GetMatrix();
+                                        CColModel *pColModel = pObj->GetColModel();
+                                        CVector min = pColModel->m_boundBox.m_vecMin;
+                                        CVector max = pColModel->m_boundBox.m_vecMax;
+
+                                        CVector workVec = min;
+                                        workVec.x = max.x;
+                                        workVec.z = max.z;
+                                        CVector vec = *matrix * workVec;
+
+                                        // TODO: Rotate the camera to face the object
+
+                                        Viewport.SetCameraPosn(vec);
+                                        ObjectMgr::m_pSelected = pObj;
+                                    }
                                 }
+
+                                ImGui::EndChild();
                             }
                         }
                         ImGui::EndTabItem();
                     }
                     if(ImGui::BeginTabItem("Favourites")) {
                         ImGui::Spacing();
-                        Widget::DataList(m_favData, [](std::string& root, std::string& key, std::string& value) {
+                        Widget::DataListFav(m_favData, [](std::string& root, std::string& key, std::string& value) {
                             ObjectMgr::ClipBoard::m_nModel = std::stoi(value);
                             CHud::SetHelpMessage("Object Copied", false, false, false);
                         });
@@ -850,7 +819,8 @@ void InterfaceMgr::DrawSidepanel() {
             }
             //----------------------------------------------------
             // Locations
-            if(ImGui::BeginTabItem("Locations")) {
+            if(ImGui::BeginTabItem("Location")) {
+                ImGui::Spacing();
                 if (ImGui::Button("Set auto teleport location", Utils::GetSize())) {
                     CVector pos = TheCamera.GetPosition();
                     gConfig.Set("editor.tp.X", pos.x);
@@ -859,29 +829,6 @@ void InterfaceMgr::DrawSidepanel() {
                     CHud::SetHelpMessage("Teleport location set", false, false, false);
                 }
                 ImGui::Spacing();
-                if (ImGui::CollapsingHeader("Add new")) {
-                    static char m_nLocationBuffer[64], m_nInputBuffer[64];
-                    ImGui::Spacing();
-                    ImGui::InputTextWithHint("Location", "Groove Street", m_nLocationBuffer, IM_ARRAYSIZE(m_nLocationBuffer));
-                    if (ImGui::IsItemActive()) {
-                        m_bInputLocked = true;
-                    }
-                    ImGui::InputTextWithHint("Coordinates", "x, y, z", m_nInputBuffer, IM_ARRAYSIZE(m_nInputBuffer));
-                    if (ImGui::IsItemActive()) {
-                        m_bInputLocked = true;
-                    }
-                    ImGui::Spacing();
-                    if (ImGui::Button("Insert current coord", Utils::GetSize(2))) {
-                        CVector pos = FindPlayerPed()->GetPosition();
-                        sprintf(m_nInputBuffer, "%f, %f, %f", pos.x, pos.y, pos.z);
-                    }
-                    ImGui::SameLine();
-                    if (ImGui::Button("Add location", Utils::GetSize(2))) {
-                        m_locData.m_pData->Set(std::format("Custom.{}", m_nLocationBuffer).c_str(), ("0, " + std::string(m_nInputBuffer)));
-                        m_locData.m_pData->Save();
-                    }
-                    ImGui::Spacing();
-                }
                 Widget::DataList(m_locData,
                 [](std::string& root, std::string& key, std::string& loc) {
                     try {
@@ -893,6 +840,27 @@ void InterfaceMgr::DrawSidepanel() {
                         Viewport.SetCameraPosn(pos);
                     } catch (...) {
                         CHud::SetHelpMessage("Invalid location", false, false, false);
+                    }
+                }, [this](){
+                    static char m_nLocationBuffer[64], m_nInputBuffer[64];
+                    ImGui::Spacing();
+                    ImGui::InputTextWithHint("Location", "Groove Street", m_nLocationBuffer, IM_ARRAYSIZE(m_nLocationBuffer));
+                    if (ImGui::IsItemActive()) {
+                        m_bInputLocked = true;
+                    }
+                    ImGui::InputTextWithHint("Coordinates", "x, y, z", m_nInputBuffer, IM_ARRAYSIZE(m_nInputBuffer));
+                    if (ImGui::IsItemActive()) {
+                        m_bInputLocked = true;
+                    }
+                    ImGui::Spacing();
+                    if (ImGui::Button("Insert coord", Utils::GetSize(2))) {
+                        CVector pos = FindPlayerPed()->GetPosition();
+                        sprintf(m_nInputBuffer, "%f, %f, %f", pos.x, pos.y, pos.z);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Add location", Utils::GetSize(2))) {
+                        m_locData.m_pData->Set(std::format("Custom.{}", m_nLocationBuffer).c_str(), ("0, " + std::string(m_nInputBuffer)));
+                        m_locData.m_pData->Save();
                     }
                 });
                 ImGui::EndTabItem();
@@ -921,28 +889,33 @@ void InterfaceMgr::DrawSidepanel() {
                 ImGui::Text("Total models loaded: %d", ObjectMgr::m_nTotalIDELine);
                 ImGui::Spacing();
                 ImGui::Checkbox("Auto rotate", &Viewport.Browser.m_bAutoRot);
+                ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth()/2);
                 ImGui::SliderFloat("Render scale", &Viewport.Browser.m_fScale, 0.0f, 5.0f);
                 ImGui::Spacing();
-                if (ImGui::Button("Copy render object", Utils::GetSize())) {
+                if (ImGui::Button("Copy object", Utils::GetSize())) {
                     ObjectMgr::ClipBoard::m_nModel = Viewport.Browser.GetSelected();
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
                 if(ImGui::BeginTabBar("Broweser Tab", ImGuiTabBarFlags_NoTooltip)) {
-                    if(ImGui::BeginTabItem("IPL search")) {
+                    if(ImGui::BeginTabItem("IDE Search")) {
                         ImGui::Spacing();
-                        IplFilter.Draw("Search");
-                        if(ImGui::IsItemActive()) {
-                            m_bInputLocked = true;
-                        }
+                        ImGui::PushItemWidth((ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().ItemSpacing.x)/2);
 
-                        if (Widget::ListBox("IDE", iplList, selected)) {
-                            for (auto &data : ObjectMgr::m_vecModelNames) {
+                        if (Widget::ListBox("##IDEBox", iplList, selected)) {
+                             for (auto &data : ObjectMgr::m_vecModelNames) {
                                 if (data.first == selected) {
                                     pData = &data.second;
                                     break;
                                 }
                             }
+                        }
+                        ImGui::SameLine();
+                        Widget::Filter("##Filter", IplFilter, "Search");
+                        ImGui::PopItemWidth();
+                        
+                        if(ImGui::IsItemActive()) {
+                            m_bInputLocked = true;
                         }
                         ImGui::Spacing();
                         if(ImGui::BeginChild("Browser")) {
@@ -967,9 +940,8 @@ void InterfaceMgr::DrawSidepanel() {
                     if(ImGui::BeginTabItem("Full search")) {
                         static std::vector<std::pair<int, std::string>> searchResults;
                         ImGui::Spacing();
-                        ImGui::TextWrapped("Full search is intensive. May lag your game");
                         ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth());
-                        totalFilter.Draw("##Search");
+                        Widget::Filter("##Filter", totalFilter, "trashcan");
                         if(ImGui::IsItemActive()) {
                             m_bInputLocked = true;
                         }
@@ -1010,7 +982,7 @@ full_search:
                     }
                     if(ImGui::BeginTabItem("Favourites")) {
                         ImGui::Spacing();
-                        Widget::DataList(m_favData,
+                        Widget::DataListFav(m_favData,
                         [](std::string& root, std::string& key, std::string& model) {
                             Viewport.Browser.SetSelected((size_t)std::stoi(model));
                         });

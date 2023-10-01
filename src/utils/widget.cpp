@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "widget.h"
+#include "../interface.h"
 
 static struct {
     std::string root, key, val;
@@ -68,6 +69,9 @@ void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fA
     if (Widget::Filter("##Filter", data.m_Filter, "Search")) {
         data.UpdateSearchList(favourites);
     }
+    if (ImGui::IsItemActive()) {
+        Interface.m_bInputLocked = true;
+    }
     ImGui::PopItemWidth();
 
     ImGui::Spacing();
@@ -99,7 +103,7 @@ void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fA
             ImGui::Text(contextMenu.key.c_str());
             ImGui::Separator();
 
-            if (!favourites && ImGui::MenuItem("Favourites")) {
+            if (!favourites && ImGui::MenuItem("Add to favourites")) {
                 data.m_pData->Set(std::format("Favourites.{}", contextMenu.key).c_str(), contextMenu.val);
                 data.m_pData->Save();
             }
@@ -161,8 +165,6 @@ void Widget::DataList(ResourceStore& data, fArg3_t clickFunc, fArgNone_t addFunc
             if (ImGui::BeginTabItem("Add new")) {
                 ImGui::Spacing();
                 ImGui::BeginChild("AddNew2");
-                ImGui::TextWrapped(TEXT("Window.AddNewTip"));
-                ImGui::Dummy(ImVec2(0, 5));
                 addFunc();
                 ImGui::EndChild();
                 ImGui::EndTabItem();
@@ -172,6 +174,18 @@ void Widget::DataList(ResourceStore& data, fArg3_t clickFunc, fArgNone_t addFunc
             tabsFunc();
         }
         ImGui::EndTabBar();
+    }
+}
+
+
+void Widget::DataListFav(ResourceStore& data, fArg3_t clickFunc, fArgNone_t contextOptionsFunc) {
+    if (ImGui::IsMouseClicked(1)) {
+        contextMenu.show = false;
+    }
+    ImGui::Spacing();
+    DrawClippedList(data, clickFunc, true, contextOptionsFunc);
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        data.UpdateSearchList(true);
     }
 }
 

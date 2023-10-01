@@ -22,6 +22,8 @@ class Widget {
     // Draws DataStore data in the interface
     static void DataList(ResourceStore& data, fArg3_t clickFunc = nullptr, fArgNone_t addFunc = nullptr,
                          fArgNone_t contextOptionsFunc = nullptr, fArgNone_t tabsFunc = nullptr);
+    // Standalone favourites implementation
+    static void DataListFav(ResourceStore& data, fArg3_t clickFunc, fArgNone_t contextOptionsFunc = nullptr);
 
     // ImGui::TextFilter with hint support
     static bool Filter(const char* label, ImGuiTextFilter& filter, const char* hint);
