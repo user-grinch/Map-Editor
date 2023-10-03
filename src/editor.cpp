@@ -130,7 +130,7 @@ void EditorMgr::Process() {
             }
             Interface.m_bInputLocked = false;
 
-            if (Interface.m_bAutoSave && ObjectMgr::m_pPlacedObjs.size() > 0) {
+            if (Interface.m_bAutoSave && ObjMgr.m_pPlacedObjs.size() > 0) {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
 

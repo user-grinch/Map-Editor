@@ -11,6 +11,7 @@
 #include <CScene.h>
 #include <CSprite.h>
 #include <D3dx9math.h>
+#include "editor.h"
 
 #define PLAYER_Z_OFFSET 0.0f
 #define MOUSE_FACTOR_X 13.0f
@@ -77,7 +78,13 @@ ViewportMgr Viewport;
 ViewportMgr::ViewportMgr() {
     Events::initGameEvent += [this]() {
         Viewport.m_nMoveSpeed = gConfig.Get("editor.moveSpeed", 1.0f);
-     };
+    };
+
+    // highlight selected object
+    ThiscallEvent<AddressList<0x534310, H_JUMP>, PRIORITY_BEFORE, ArgPickN<CEntity*, 0>, void(CEntity*)> entityRenderEvent;
+    entityRenderEvent +=[this](CEntity *pEntity) {
+        HighlightSelectedObject(pEntity);
+    };
 }
 
 void ViewportMgr::Init() {
@@ -162,6 +169,155 @@ void BrowserMgr::Process() {
         }
         return;
     }
+}
+
+/*
+*  Part of the source is taken from DrawColsSA by Sergeanur
+*  https://github.com/Sergeanur/
+*/
+
+static void RenderLineWithClipping(float x1, float y1, float z1, float x2, float y2, float z2, unsigned int c1, unsigned int c2) {
+    ((void (__cdecl *)(float, float, float, float, float, float, unsigned int, unsigned int))0x6FF4F0)(x1, y1, z1, x2, y2, z2, c1, c2);
+}
+
+static void NodeWrapperRecursive(RwFrame* frame, CEntity* pEntity, std::function<void(RwFrame*)> func) {
+    if (frame) {
+        func(frame);
+        if (RwFrame* newFrame = frame->child) {
+            NodeWrapperRecursive(newFrame, pEntity, func);
+        }
+        if (RwFrame* newFrame = frame->next) {
+            NodeWrapperRecursive(newFrame, pEntity, func);
+        }
+    }
+    return;
+}
+
+void ViewportMgr::HighlightSelectedObject(CEntity *pEntity) {
+    
+    if (!Editor.IsOpen()) {
+        return;
+    }
+
+    if (pEntity->m_nType != ENTITY_TYPE_BUILDING && pEntity->m_nType != ENTITY_TYPE_OBJECT) {
+        return;
+    }
+
+    RpClump *pClump  = pEntity->m_pRwClump;
+    if (!pClump) {
+        return;
+    }
+    RwFrame* pFrame = (RwFrame*)pClump->object.parent;
+    NodeWrapperRecursive(pFrame, pEntity, [&](RwFrame* frame) {
+        RwFrameForAllObjects(frame, [](RwObject* object, void* data) -> RwObject* {
+            if (object->type == rpATOMIC) {
+                RpAtomic* atomic = reinterpret_cast<RpAtomic*>(object);
+                CEntity* pEntity = reinterpret_cast<CEntity*>(data);
+
+                for (int i = 0; i < atomic->geometry->matList.numMaterials; ++i) {
+                    if (pEntity == ObjMgr.m_pSelected) {
+                        atomic->geometry->matList.materials[i]->color = {255, 0, 0, 255}; 
+                        atomic->geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
+                    } 
+                    else {
+                        atomic->geometry->matList.materials[i]->color = {255, 255, 255, 255};
+                    }
+                    
+                }
+            }
+            return object;
+        }, pEntity);
+    });
+
+    if (ObjMgr.m_pSelected != pEntity) {
+        return;
+    }
+
+    CMatrix *matrix = pEntity->GetMatrix();
+    if (!matrix) {
+        return;
+    }
+
+    unsigned short index = pEntity->m_nModelIndex;
+    if (!CModelInfo::ms_modelInfoPtrs[index]) {
+        return;
+    }
+
+    CColModel *pColModel = CModelInfo::ms_modelInfoPtrs[index]->m_pColModel;
+    if (!pColModel) {
+        return;
+    }
+
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
+    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
+    RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
+
+    if (Interface.m_bDrawBoundingBox) {
+        CVector min = pColModel->m_boundBox.m_vecMin;
+        CVector max = pColModel->m_boundBox.m_vecMax;
+
+        CVector workVec = min;
+        CVector v1 = *matrix * workVec;
+
+        workVec.z = max.z;
+        CVector v2 = *matrix * workVec;
+
+        workVec = min;
+        workVec.x = max.x;
+        CVector v3 = *matrix * workVec;
+
+        workVec = min;
+        workVec.y = max.y;
+        CVector v4 = *matrix * workVec;
+
+        workVec = min;
+        workVec.y = max.y;
+        workVec.z = max.z;
+        CVector v5 = *matrix * workVec;
+
+        workVec = min;
+        workVec.x = max.x;
+        workVec.z = max.z;
+        CVector v6 = *matrix * workVec;
+
+        workVec = min;
+        workVec.x = max.x;
+        workVec.y = max.y;
+        CVector v7 = *matrix * workVec;
+
+        workVec = max;
+        CVector v8 = *matrix * workVec;
+
+        RenderLineWithClipping(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v1.x, v1.y, v1.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v1.x, v1.y, v1.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v5.x, v5.y, v5.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v5.x, v5.y, v5.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v5.x, v5.y, v5.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v6.x, v6.y, v6.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v6.x, v6.y, v6.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v6.x, v6.y, v6.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v7.x, v7.y, v7.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v7.x, v7.y, v7.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
+        RenderLineWithClipping(v7.x, v7.y, v7.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
+    }
+
+    if (ObjMgr.m_pSelected && Interface.m_bDrawAxisLines) {
+        static float length = 300.0f;
+        RwV3d pos = ObjMgr.m_pSelected->GetPosition().ToRwV3d();
+
+        RenderLineWithClipping(pos.x - length, pos.y, pos.z, pos.x + length, pos.y, pos.z, 0xFF0000FF, 0xFF0000FF);
+        RenderLineWithClipping(pos.x, pos.y - length, pos.z, pos.x, pos.y + length, pos.z, 0x00FF00FF, 0x00FF00FF);
+        RenderLineWithClipping(pos.x, pos.y, pos.z - length, pos.x, pos.y, pos.z + length, 0x0000FFFF, 0x0000FFFF);
+    }
+
+    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)5);
+    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)6);
+    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)false);
+    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
+    RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
 }
 
 void BrowserMgr::RenderModel() {
@@ -254,7 +410,7 @@ void ViewportMgr::DrawHoverMenu() {
 
             // lets not go over 20000 models each frame
             if (bmodel != model) {
-                name = ObjectMgr::FindNameFromModel(model);
+                name = ObjMgr.FindNameFromModel(model);
                 bmodel = model;
             }
 
@@ -364,11 +520,11 @@ void ViewportMgr::DrawOverlay() {
 
 static void QuickObjectCreatePopup() {
     static int modelId = 620;
-    static std::string modelName = ObjectMgr::FindNameFromModel(modelId);
+    static std::string modelName = ObjMgr.FindNameFromModel(modelId);
 
     ImGui::Text("Name: %s", modelName.c_str());
     if (ImGui::InputInt("Model", &modelId)) {
-        modelName = ObjectMgr::FindNameFromModel(modelId);
+        modelName = ObjMgr.FindNameFromModel(modelId);
     }
     if (KeyPressed(VK_RETURN)) {
         goto create_object;
@@ -385,11 +541,11 @@ create_object:
         Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(modelId);
 
         CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjectMgr::m_objData.Get(pEntity);
+        auto &data = ObjMgr.m_objData.Get(pEntity);
         data.m_modelName = modelName;
 
-        ObjectMgr::m_pPlacedObjs.push_back(pEntity);
-        ObjectMgr::m_pSelected = pEntity;
+        ObjMgr.m_pPlacedObjs.push_back(pEntity);
+        ObjMgr.m_pSelected = pEntity;
 
         Interface.m_PopupMenu.m_bShow = false;
     }
@@ -417,18 +573,18 @@ static void ContextMenu_NewObject() {
 }
 
 static void ContextMenu_SnapToGround() {
-    CVector objPos = ObjectMgr::m_pSelected->GetPosition();
-    int hObj = CPools::GetObjectRef(ObjectMgr::m_pSelected);
-    float offZ = objPos.z - ObjectMgr::GetBoundingBoxGroundZ(ObjectMgr::m_pSelected);
+    CVector objPos = ObjMgr.m_pSelected->GetPosition();
+    int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
+    float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
     objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
     Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos.x, objPos.y, objPos.z);
 }
 
 static void ContextMenu_Copy() {
     if (Viewport.m_HoveredEntity) {
-        ObjectMgr::ClipBoard::m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
+        ObjMgr.ClipBoard.m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
 
-        CVector &rot = ObjectMgr::ClipBoard::m_vecRot;
+        CVector &rot = ObjMgr.ClipBoard.m_vecRot;
         // Store rotation
         CallMethod<0x59A840, int>((int)Viewport.m_HoveredEntity->GetMatrix(),
                                   &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
@@ -446,44 +602,44 @@ static void ContextMenu_Copy() {
 }
 
 static void ContextMenu_Paste() {
-    if (!ObjectMgr::ClipBoard::m_nModel) {
+    if (!ObjMgr.ClipBoard.m_nModel) {
         return;
     }
 
     CEntity *pEntity;
     CVector pos;
-    if (Command<Commands::IS_MODEL_AVAILABLE>(ObjectMgr::ClipBoard::m_nModel)
+    if (Command<Commands::IS_MODEL_AVAILABLE>(ObjMgr.ClipBoard.m_nModel)
             && Utils::TraceEntity(pEntity, pos)) {
         int hObj;
-        Command<Commands::REQUEST_MODEL>(ObjectMgr::ClipBoard::m_nModel);
+        Command<Commands::REQUEST_MODEL>(ObjMgr.ClipBoard.m_nModel);
         Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(ObjectMgr::ClipBoard::m_nModel, pos.x, pos.y, pos.z, &hObj);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(ObjectMgr::ClipBoard::m_nModel);
+        Command<Commands::CREATE_OBJECT>(ObjMgr.ClipBoard.m_nModel, pos.x, pos.y, pos.z, &hObj);
+        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(ObjMgr.ClipBoard.m_nModel);
 
         CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjectMgr::m_objData.Get(pEntity);
-        data.m_modelName = ObjectMgr::FindNameFromModel(ObjectMgr::ClipBoard::m_nModel);
+        auto &data = ObjMgr.m_objData.Get(pEntity);
+        data.m_modelName = ObjMgr.FindNameFromModel(ObjMgr.ClipBoard.m_nModel);
 
         if (Interface.m_bRandomRot) {
-            ObjectMgr::ClipBoard::m_vecRot.x = Random(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
-            ObjectMgr::ClipBoard::m_vecRot.y = Random(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
-            ObjectMgr::ClipBoard::m_vecRot.z = Random(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
+            ObjMgr.ClipBoard.m_vecRot.x = Random(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
+            ObjMgr.ClipBoard.m_vecRot.y = Random(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
+            ObjMgr.ClipBoard.m_vecRot.z = Random(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
         }
 
-        data.SetRotation(ObjectMgr::ClipBoard::m_vecRot);
+        data.SetRotation(ObjMgr.ClipBoard.m_vecRot);
 
-        ObjectMgr::m_pPlacedObjs.push_back(pEntity);
-        ObjectMgr::m_pSelected = pEntity;
+        ObjMgr.m_pPlacedObjs.push_back(pEntity);
+        ObjMgr.m_pSelected = pEntity;
     }
 }
 
 static void ContextMenu_Delete() {
-    if (ObjectMgr::m_pSelected) {
-        ObjectMgr::m_pSelected->Remove();
-        ObjectMgr::m_pPlacedObjs.erase(std::remove(ObjectMgr::m_pPlacedObjs.begin(),
-                                        ObjectMgr::m_pPlacedObjs.end(), ObjectMgr::m_pSelected), ObjectMgr::m_pPlacedObjs.end());
+    if (ObjMgr.m_pSelected) {
+        ObjMgr.m_pSelected->Remove();
+        ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
+                                        ObjMgr.m_pPlacedObjs.end(), ObjMgr.m_pSelected), ObjMgr.m_pPlacedObjs.end());
 
-        ObjectMgr::m_pSelected = nullptr;
+        ObjMgr.m_pSelected = nullptr;
     }
 }
 
@@ -498,7 +654,7 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
 
     if (ImGui::MenuItem("Add to favourites")) {
         int model = Viewport.m_HoveredEntity->m_nModelIndex;
-        std::string keyName = std::to_string(model) + " - " + ObjectMgr::FindNameFromModel(model);
+        std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
         Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
         Interface.m_favData.m_pData->Save();
         Interface.m_favData.UpdateSearchList();
@@ -683,10 +839,10 @@ void ViewportMgr::ProcessInputs() {
         CVector pos;
 
         if (Utils::TraceEntity(pEntity, pos)) {
-            ObjectMgr::m_pSelected = nullptr;
-            for (auto &ent : ObjectMgr::m_pPlacedObjs) {
+            ObjMgr.m_pSelected = nullptr;
+            for (auto &ent : ObjMgr.m_pPlacedObjs) {
                 if (ent == pEntity) {
-                    ObjectMgr::m_pSelected = (CObject*)pEntity;
+                    ObjMgr.m_pSelected = (CObject*)pEntity;
                     break;
                 }
             }
@@ -706,25 +862,25 @@ void ViewportMgr::ProcessInputs() {
         if (!Browser.m_bShown) {
             static bool bObjectBeingDragged;
 
-            if (ImGui::IsMouseDown(0) && ObjectMgr::m_pSelected) {
+            if (ImGui::IsMouseDown(0) && ObjMgr.m_pSelected) {
                 CEntity *pEntity;
                 static CVector pos, off;
                 bool bFound = Utils::TraceEntity(pEntity, pos);
 
                 if (bFound) {
                     if (bObjectBeingDragged) {
-                        auto &data = ObjectMgr::m_objData.Get(ObjectMgr::m_pSelected);
+                        auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
                         CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
 
                         if (Interface.m_bAutoSnapToGround) {
-                            float offZ = objPos.z - ObjectMgr::GetBoundingBoxGroundZ(ObjectMgr::m_pSelected);
+                            float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
                             objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
                             off.z = pos.z - objPos.z;
                         }
 
                         Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
                     } else {
-                        if (pEntity == ObjectMgr::m_pSelected) {
+                        if (pEntity == ObjMgr.m_pSelected) {
                             off = pos - pEntity->GetPosition();
                             bObjectBeingDragged = true;
                         }
@@ -732,10 +888,10 @@ void ViewportMgr::ProcessInputs() {
                 }
             } else {
                 if (bObjectBeingDragged
-                        && Interface.m_bAutoSnapToGround && ObjectMgr::m_pSelected) {
-                    auto &data = ObjectMgr::m_objData.Get(ObjectMgr::m_pSelected);
-                    CVector pos = ObjectMgr::m_pSelected->GetPosition();
-                    float offZ = pos.z - ObjectMgr::GetBoundingBoxGroundZ(ObjectMgr::m_pSelected);
+                        && Interface.m_bAutoSnapToGround && ObjMgr.m_pSelected) {
+                    auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
+                    CVector pos = ObjMgr.m_pSelected->GetPosition();
+                    float offZ = pos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
                     pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
                     Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
                 }
@@ -747,9 +903,9 @@ void ViewportMgr::ProcessInputs() {
         // Z axis movement
         ImGuiIO &io = ImGui::GetIO();
         float wheel = io.MouseWheel;
-        if (wheel && ObjectMgr::m_pSelected && m_eState == eViewportState::Edit) {
+        if (wheel && ObjMgr.m_pSelected && m_eState == eViewportState::Edit) {
             if (KeyPressed(VK_LCONTROL)) {
-                auto &data = ObjectMgr::m_objData.Get(ObjectMgr::m_pSelected);
+                auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
                 CVector rot = data.GetRotation();
                 rot.z += 3*wheel;
 
@@ -763,8 +919,8 @@ void ViewportMgr::ProcessInputs() {
 
                 data.SetRotation(rot);
             } else {
-                CVector objPos = ObjectMgr::m_pSelected->GetPosition();
-                Command<Commands::SET_OBJECT_COORDINATES>(CPools::GetObjectRef(ObjectMgr::m_pSelected),
+                CVector objPos = ObjMgr.m_pSelected->GetPosition();
+                Command<Commands::SET_OBJECT_COORDINATES>(CPools::GetObjectRef(ObjMgr.m_pSelected),
                         objPos.x, objPos.y, objPos.z + wheel/3);
             }
         }

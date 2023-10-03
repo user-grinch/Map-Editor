@@ -45,33 +45,32 @@ class ExData {
 */
 class ObjectMgr {
   private:
-    // Draws bounding box & axis lines to the object
-    static void HighlightObject(CObject *pObj);
+    void HighlightObject(CEntity *pEntity);
 
   public:
     /*
     * Vector for stories entity model names
     * Format: model = dffName
     */
-    static inline std::vector<std::pair<std::string, std::vector<std::pair<int, std::string>>>> m_vecModelNames;
-    static inline std::vector<CObject*> m_pPlacedObjs; // Vector of currently placed entities
-    static inline ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
-    static inline CObject* m_pSelected; // Currently selected entity, Points to nullptr if none is selected
-    static inline int m_nTotalIDELine; // Total number of ide lines
+    std::vector<std::pair<std::string, std::vector<std::pair<int, std::string>>>> m_vecModelNames;
+    std::vector<CObject*> m_pPlacedObjs; // Vector of currently placed entities
+    ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
+    CObject* m_pSelected; // Currently selected entity, Points to nullptr if none is selected
+    int m_nTotalIDELine; // Total number of ide lines
 
-    struct ClipBoard {
-        static inline int m_nModel;
-        static inline CVector m_vecRot;
-    };
+    struct{
+        int m_nModel;
+        CVector m_vecRot;
+    } ClipBoard;
 
     ObjectMgr();
     ObjectMgr(ObjectMgr&);
 
     // Returns object name from it's model
-    static std::string FindNameFromModel(int model);
+    std::string FindNameFromModel(int model);
 
     // Returns the bottom Z bounding box coordinates
-    static float GetBoundingBoxGroundZ(CObject *pObj);
+    float GetBoundingBoxGroundZ(CObject *pObj);
 };
 
 extern ObjectMgr ObjMgr;

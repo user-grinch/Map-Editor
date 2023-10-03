@@ -15,7 +15,7 @@
 void ContextMenu_Search(std::string& root, std::string& key, std::string& value) {
     if (ImGui::MenuItem("Add to favourites")) {
         int model = std::stoi(value);
-        std::string keyName = value + " - " + ObjectMgr::FindNameFromModel(model);
+        std::string keyName = value + " - " + ObjMgr.FindNameFromModel(model);
         Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
         Interface.m_favData.m_pData->Save();
         Interface.m_favData.UpdateSearchList();
@@ -23,7 +23,7 @@ void ContextMenu_Search(std::string& root, std::string& key, std::string& value)
     };
 
     if (ImGui::MenuItem("Copy")) {
-        ObjectMgr::ClipBoard::m_nModel = std::stoi(value);
+        ObjMgr.ClipBoard.m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     };
 }
@@ -34,7 +34,7 @@ void ImportPopup() {
     if (std::filesystem::exists(path)) {
         ImGui::Spacing();
         ImGui::Text("Info,");
-        ImGui::TextWrapped("- Place ipl files in 'MapEditor' directory");
+        ImGui::TextWrapped("- Place IPLs in 'MapEditorSA' directory");
         ImGui::TextWrapped("- Use limit adjuster if you're gonna load a lot of objects!");
         ImGui::Spacing();
         ImGui::TextWrapped("You game may freeze while loading!");
@@ -43,7 +43,7 @@ void ImportPopup() {
 
         static bool logImports;
         ImGui::Checkbox("Log imports", &logImports);
-        Widget::Tooltip("Logs imports line by line in MapEditor.log.\nEnable this if the game crashes while importing\nand you want to know the error line.\n\nNote: Has performance impact!");
+        Widget::Tooltip("Logs imports line by line in MapEditorSA.log.\nEnable this if the game crashes while importing\nand you want to know the error line.\n\nNote: Has performance impact!");
 
         if (ImGui::Button("Import IPL", Utils::GetSize(2))) {
             FileMgr::ImportIPL(selectedFileName.c_str(), logImports);
@@ -51,11 +51,11 @@ void ImportPopup() {
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear placed objects", Utils::GetSize(2))) {
-            for (auto &pObj : ObjectMgr::m_pPlacedObjs) {
+            for (auto &pObj : ObjMgr.m_pPlacedObjs) {
                 pObj->Remove();
             }
-            ObjectMgr::m_pSelected = nullptr;
-            ObjectMgr::m_pPlacedObjs.clear();
+            ObjMgr.m_pSelected = nullptr;
+            ObjMgr.m_pPlacedObjs.clear();
             CHud::SetHelpMessage("Current objects cleared", false, false, false);
         }
         ImGui::Spacing();
@@ -161,7 +161,8 @@ void AboutEditorPopup() {
     ImGui::Dummy(ImVec2(0.0f, 20.0f));
     ImGui::TextWrapped("You are not allowed to reupload this modification without explicit permission from the author! You have to link to the official source.");
     ImGui::Dummy(ImVec2(0.0f, 30.0f));
-    Widget::TextCentered("Copyright Grinch_ 2021-2022. All rights reserved");
+    Widget::TextCentered("Copyright Grinch_ 2021-2022");
+    Widget::TextCentered("All rights reserved");
 }
 
 void ControlsPopup() {
@@ -376,8 +377,8 @@ InterfaceMgr::InterfaceMgr() {
         m_bAutoSave = gConfig.Get("editor.autoSave", true);
         m_bAutoTpToLoc = gConfig.Get("editor.autoTpToLoc", false);
         m_bAutoSnapToGround = gConfig.Get("editor.autoSnap", true);
-        m_bDrawAxisLines = gConfig.Get("editor.drawAxisLines", true);
-        m_bDrawBoundingBox = gConfig.Get("editor.drawBoundingBox", true);
+        m_bDrawAxisLines = gConfig.Get("editor.drawAxisLines", false);
+        m_bDrawBoundingBox = gConfig.Get("editor.drawBoundingBox", false);
         m_bShowFPS = gConfig.Get("editor.showFPS", false);
         m_bShowHoverMenu = gConfig.Get("editor.showHoverMenu", true);
         m_bShowSidepanel = gConfig.Get("editor.showInfoMenu", true);
@@ -634,20 +635,20 @@ void InterfaceMgr::DrawSidepanel() {
                 if (ImGui::BeginChild("Editor child")) {
                     // ---------------------------------------------------
                     // Object info
-                    if (ObjectMgr::m_pSelected) {
+                    if (ObjMgr.m_pSelected) {
                         if (ImGui::CollapsingHeader("Object selection", ImGuiTreeNodeFlags_DefaultOpen)) {
-                            int hObj = CPools::GetObjectRef(ObjectMgr::m_pSelected);
-                            CVector *objPos = &ObjectMgr::m_pSelected->GetPosition();
-                            auto &data = ObjectMgr::m_objData.Get(ObjectMgr::m_pSelected);
-                            int model = ObjectMgr::m_pSelected->m_nModelIndex;
-                            if (ObjectMgr::m_pSelected->m_nType == ENTITY_TYPE_OBJECT
-                                    || ObjectMgr::m_pSelected->m_nType == ENTITY_TYPE_BUILDING) {
+                            int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
+                            CVector *objPos = &ObjMgr.m_pSelected->GetPosition();
+                            auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
+                            int model = ObjMgr.m_pSelected->m_nModelIndex;
+                            if (ObjMgr.m_pSelected->m_nType == ENTITY_TYPE_OBJECT
+                                    || ObjMgr.m_pSelected->m_nType == ENTITY_TYPE_BUILDING) {
                                 static int bmodel = 0;
                                 static std::string name = "";
 
                                 // lets not go over 20000 models each frame
                                 if (bmodel != model) {
-                                    name = ObjectMgr::FindNameFromModel(model);
+                                    name = ObjMgr.FindNameFromModel(model);
                                     bmodel = model;
                                 }
 
@@ -659,7 +660,7 @@ void InterfaceMgr::DrawSidepanel() {
                             ImGui::Columns(2, NULL, false);
                             ImGui::Text("Model: %d", model);
                             ImGui::NextColumn();
-                            switch(ObjectMgr::m_pSelected->m_nType) {
+                            switch(ObjMgr.m_pSelected->m_nType) {
                             case ENTITY_TYPE_OBJECT:
                                 ImGui::Text("Type: Dynamic");
                                 break;
@@ -752,15 +753,15 @@ void InterfaceMgr::DrawSidepanel() {
                     if(ImGui::BeginTabItem("Placed")) {
                         static ImGuiTextFilter filter;
                         ImGui::Spacing();
-                        if (ObjectMgr::m_pPlacedObjs.size() == 0) {
+                        if (ObjMgr.m_pPlacedObjs.size() == 0) {
                             Widget::TextCentered("You haven't placed any objects yet!");
                         } else {
                             if (ImGui::Button("Remove All", Utils::GetSize(1))) {
-                                for (auto &pObj : ObjectMgr::m_pPlacedObjs) {
+                                for (auto &pObj : ObjMgr.m_pPlacedObjs) {
                                     pObj->Remove();
                                 }
-                                ObjectMgr::m_pSelected = nullptr;
-                                ObjectMgr::m_pPlacedObjs.clear();
+                                ObjMgr.m_pSelected = nullptr;
+                                ObjMgr.m_pPlacedObjs.clear();
                             }
                         
                             ImGui::Spacing();
@@ -771,12 +772,12 @@ void InterfaceMgr::DrawSidepanel() {
                             }
                             ImGui::Spacing();
                             if (ImGui::BeginChild("Objects child")) {
-                                for (size_t i = 0; i < ObjectMgr::m_pPlacedObjs.size(); i++) {
-                                    CObject *pObj = ObjectMgr::m_pPlacedObjs[i];
-                                    auto &data = ObjectMgr::m_objData.Get(pObj);
+                                for (size_t i = 0; i < ObjMgr.m_pPlacedObjs.size(); i++) {
+                                    CObject *pObj = ObjMgr.m_pPlacedObjs[i];
+                                    auto &data = ObjMgr.m_objData.Get(pObj);
 
                                     if (data.m_modelName == "") {
-                                        data.m_modelName = ObjectMgr::FindNameFromModel(pObj->m_nModelIndex);
+                                        data.m_modelName = ObjMgr.FindNameFromModel(pObj->m_nModelIndex);
                                     }
                                     char buf[32];
                                     sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
@@ -796,7 +797,7 @@ void InterfaceMgr::DrawSidepanel() {
                                         // TODO: Rotate the camera to face the object
 
                                         Viewport.SetCameraPosn(vec);
-                                        ObjectMgr::m_pSelected = pObj;
+                                        ObjMgr.m_pSelected = pObj;
                                     }
                                 }
 
@@ -808,7 +809,7 @@ void InterfaceMgr::DrawSidepanel() {
                     if(ImGui::BeginTabItem("Favourites")) {
                         ImGui::Spacing();
                         Widget::DataListFav(m_favData, [](std::string& root, std::string& key, std::string& value) {
-                            ObjectMgr::ClipBoard::m_nModel = std::stoi(value);
+                            ObjMgr.ClipBoard.m_nModel = std::stoi(value);
                             CHud::SetHelpMessage("Object Copied", false, false, false);
                         });
                         ImGui::EndTabItem();
@@ -878,22 +879,22 @@ void InterfaceMgr::DrawSidepanel() {
 
                 int iplCount = iplList.size();
                 if (iplCount < 1) {
-                    for (auto &data : ObjectMgr::m_vecModelNames) {
+                    for (auto &data : ObjMgr.m_vecModelNames) {
                         iplList.push_back(data.first);
                     }
-                    pData = &ObjectMgr::m_vecModelNames[0].second;
+                    pData = &ObjMgr.m_vecModelNames[0].second;
                 }
                 static std::string selected = iplList[0];
                 ImGui::Spacing();
                 ImGui::Text("Total IPLs loaded: %d", iplCount);
-                ImGui::Text("Total models loaded: %d", ObjectMgr::m_nTotalIDELine);
+                ImGui::Text("Total models loaded: %d", ObjMgr.m_nTotalIDELine);
                 ImGui::Spacing();
                 ImGui::Checkbox("Auto rotate", &Viewport.Browser.m_bAutoRot);
                 ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth()/2);
                 ImGui::SliderFloat("Render scale", &Viewport.Browser.m_fScale, 0.0f, 5.0f);
                 ImGui::Spacing();
                 if (ImGui::Button("Copy object", Utils::GetSize())) {
-                    ObjectMgr::ClipBoard::m_nModel = Viewport.Browser.GetSelected();
+                    ObjMgr.ClipBoard.m_nModel = Viewport.Browser.GetSelected();
                     CHud::SetHelpMessage("Object Copied", false, false, false);
                 }
                 ImGui::Spacing();
@@ -903,7 +904,7 @@ void InterfaceMgr::DrawSidepanel() {
                         ImGui::PushItemWidth((ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().ItemSpacing.x)/2);
 
                         if (Widget::ListBox("##IDEBox", iplList, selected)) {
-                             for (auto &data : ObjectMgr::m_vecModelNames) {
+                             for (auto &data : ObjMgr.m_vecModelNames) {
                                 if (data.first == selected) {
                                     pData = &data.second;
                                     break;
@@ -952,7 +953,7 @@ void InterfaceMgr::DrawSidepanel() {
                         if (ImGui::Button("Search", Utils::GetSize())) {
 full_search:
                             searchResults.clear();
-                            for (auto &ipl : ObjectMgr::m_vecModelNames) {
+                            for (auto &ipl : ObjMgr.m_vecModelNames) {
                                 for (auto &data : ipl.second) {
                                     std::string text = std::to_string(data.first) + " - " +  data.second;
 
