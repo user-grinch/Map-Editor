@@ -59,7 +59,7 @@ class ObjectMgr {
     int m_nTotalIDELine; // Total number of ide lines
 
     struct{
-        int m_nModel;
+        int m_nModel = -1;
         CVector m_vecRot;
     } ClipBoard;
 

@@ -573,11 +573,13 @@ static void ContextMenu_NewObject() {
 }
 
 static void ContextMenu_SnapToGround() {
-    CVector objPos = ObjMgr.m_pSelected->GetPosition();
-    int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
-    float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
-    objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
-    Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos.x, objPos.y, objPos.z);
+    if (ObjMgr.m_pSelected) {
+        CVector objPos = ObjMgr.m_pSelected->GetPosition();
+        int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
+        float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
+        objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
+        Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos.x, objPos.y, objPos.z);
+    }
 }
 
 static void ContextMenu_Copy() {
@@ -662,7 +664,7 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
         Interface.m_ContextMenu.m_bShow = false;
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Snap to ground")) {
+    if (ImGui::MenuItem("Snap to ground", NULL, false, ObjMgr.m_pSelected)) {
         ContextMenu_SnapToGround();
         Interface.m_ContextMenu.m_bShow = false;
     }
@@ -672,12 +674,12 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
         Interface.m_ContextMenu.m_bShow = false;
     }
 
-    if (ImGui::MenuItem("Paste")) {
+    if (ImGui::MenuItem("Paste", NULL, false, ObjMgr.ClipBoard.m_nModel != -1)) {
         ContextMenu_Paste();
         Interface.m_ContextMenu.m_bShow = false;
     }
 
-    if (ImGui::MenuItem("Delete")) {
+    if (ImGui::MenuItem("Delete", NULL, false, ObjMgr.m_pSelected)) {
         ContextMenu_Delete();
         Interface.m_ContextMenu.m_bShow = false;
     }
