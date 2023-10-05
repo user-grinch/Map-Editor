@@ -1,7 +1,7 @@
 #pragma once
 #define EDITOR_NAME "Map Editor"
-#define EDITOR_VERSION_NUMBER "0.10"
-#define EDITOR_VERSION EDITOR_VERSION_NUMBER"-alpha"
+#define EDITOR_VERSION_NUMBER "1.0"
+#define EDITOR_VERSION EDITOR_VERSION_NUMBER"-beta"
 #define EDITOR_TITLE EDITOR_NAME " v" EDITOR_VERSION
 
 #define DISCORD_INVITE "https://discord.gg/ZzW7kmf"

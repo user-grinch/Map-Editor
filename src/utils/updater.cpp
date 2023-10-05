@@ -16,6 +16,7 @@ std::string Updater::GetUpdateVersion() {
 void Updater::CheckUpdate() {
     if (Updater::curState == States::IDLE) {
         Updater::curState = States::CHECKING;
+        CreateThread(nullptr, NULL, (LPTHREAD_START_ROUTINE)&Updater::Process, nullptr, NULL, nullptr);
     }
 }
 
@@ -24,7 +25,7 @@ void Updater::Process() {
         return;
     }
 
-    const char* link = "https://api.github.com/repos/user-grinch/Cheat-Menu/tags";
+    const char* link = "https://api.github.com/repos/user-grinch/Map-Editor/tags";
     char* path = PLUGIN_PATH((char*)FILE_NAME "/data/versioninfo.json");
     HRESULT res = URLDownloadToFile(NULL, link, path, 0, NULL);
 

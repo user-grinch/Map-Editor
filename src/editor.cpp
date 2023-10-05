@@ -68,10 +68,6 @@ EditorMgr::EditorMgr() {
             gConfig.Set("Menu.LastUpdateChecked", st.wDay);
         }
 
-        if (Updater::IsUpdateAvailable()) {
-            Log::Print<eLogLevel::Info>("New update available: %s", Updater::GetUpdateVersion().c_str());
-        }
-
         if (!std::filesystem::exists(PLUGIN_PATH((char*)FILE_NAME))) {
             Log::Print<eLogLevel::Error>("Failed to find MapEditor directory!");
             return;
