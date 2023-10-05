@@ -44,9 +44,6 @@ class ExData {
 * Handles Opcodes Information
 */
 class ObjectMgr {
-  private:
-    void HighlightObject(CEntity *pEntity);
-
   public:
     /*
     * Vector for stories entity model names
@@ -56,7 +53,7 @@ class ObjectMgr {
     std::vector<CObject*> m_pPlacedObjs; // Vector of currently placed entities
     ObjectExtendedData<ExData> m_objData; // Used to store extended data for each entity
     CObject* m_pSelected; // Currently selected entity, Points to nullptr if none is selected
-    int m_nTotalIDELine; // Total number of ide lines
+    size_t m_nTotalIDELine; // Total number of ide lines
 
     struct{
         int m_nModel = -1;

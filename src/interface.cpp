@@ -340,15 +340,23 @@ void WelcomePopup() {
         ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Controls", Utils::GetSize(3))) {
+    if (ImGui::Button("GitHub", Utils::GetSize(2))) {
+        ShellExecute(NULL, "open", GITHUB_LINK, NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Patreon", ImVec2(Utils::GetSize(3)))) {
+        ShellExecute(NULL, "open", PATREON_LINK, NULL, NULL, SW_SHOWNORMAL);
+    }
+    if (ImGui::Button("Editor controls", Utils::GetSize(3))) {
         Interface.m_PopupMenu.m_Title = "Controls";
         Interface.m_PopupMenu.m_pFunc = ControlsPopup;
     }
     ImGui::SameLine();
-    if (ImGui::Button("About page", Utils::GetSize(3))) {
+    if (ImGui::Button("About page", Utils::GetSize(2))) {
         Interface.m_PopupMenu.m_Title = "About";
         Interface.m_PopupMenu.m_pFunc = AboutEditorPopup;
     }
+    
     ImGui::Dummy(ImVec2(0, 20));
     if (ImGui::BeginChild("WelcomeScreen")) {
         Widget::TextCentered("Welcome to Map Editor");
@@ -360,10 +368,7 @@ void WelcomePopup() {
         ImGui::Dummy(ImVec2(0, 10));
         ImGui::TextWrapped("Partial modloader support has been implemented. Create a folder called 'MapEditor' in modloader folder and put your map mods there.");
         ImGui::Dummy(ImVec2(0, 30));
-        ImGui::Text("Please note,");
-        ImGui::TextWrapped("1. You are NOT allowed to reupload this modifiction.");
-        ImGui::TextWrapped("2. If you're posting it somewhere, link to the official source.");
-        ImGui::TextWrapped("3. This can be ignored by getting permission from the author.");
+        Widget::TextCentered("Consider supporting on Patreon!");
         ImGui::Dummy(ImVec2(0, 10));
         Widget::TextCentered("Copyright Grinch_ 2021-2023");
         Widget::TextCentered("All rights reserved");
