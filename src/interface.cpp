@@ -135,6 +135,8 @@ void UpdateFoundPopup() {
     ImGui::TextWrapped("Click on the `Download page` button and follow the instructions there to update.");
 }
 
+void ControlsPopup();
+
 void AboutEditorPopup() {
     ImGui::Spacing();
     if (ImGui::Button("Discord", ImVec2(Utils::GetSize(3)))) {
