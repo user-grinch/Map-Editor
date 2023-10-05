@@ -366,10 +366,8 @@ void WelcomePopup() {
 
         ImGui::TextWrapped("Click on the `Controls` button to get started. If you have suggestions let me know on Discord.");
         ImGui::Dummy(ImVec2(0, 10));
-        ImGui::TextWrapped("Partial modloader support has been implemented. Create a folder called 'MapEditor' in modloader folder and put your map mods there.");
-        ImGui::Dummy(ImVec2(0, 30));
         Widget::TextCentered("Consider supporting on Patreon!");
-        ImGui::Dummy(ImVec2(0, 10));
+        ImGui::Spacing();
         Widget::TextCentered("Copyright Grinch_ 2021-2023");
         Widget::TextCentered("All rights reserved");
         ImGui::EndChild();
