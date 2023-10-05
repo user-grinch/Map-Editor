@@ -136,8 +136,21 @@ void UpdateFoundPopup() {
 }
 
 void AboutEditorPopup() {
-    if (ImGui::Button("Discord server", ImVec2(Utils::GetSize(2)))) {
+    ImGui::Spacing();
+    if (ImGui::Button("Discord", ImVec2(Utils::GetSize(3)))) {
         ShellExecute(NULL, "open", DISCORD_INVITE, NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("GitHub", Utils::GetSize(3))) {
+        ShellExecute(NULL, "open", GITHUB_LINK, NULL, NULL, SW_SHOWNORMAL);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Patreon", ImVec2(Utils::GetSize(3)))) {
+        ShellExecute(NULL, "open", PATREON_LINK, NULL, NULL, SW_SHOWNORMAL);
+    }
+    if (ImGui::Button("Editor controls", Utils::GetSize(2))) {
+        Interface.m_PopupMenu.m_Title = "Controls";
+        Interface.m_PopupMenu.m_pFunc = ControlsPopup;
     }
     ImGui::SameLine();
     if (ImGui::Button("Check update", Utils::GetSize(2))) {
