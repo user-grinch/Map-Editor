@@ -176,7 +176,7 @@ void AboutEditorPopup() {
     ImGui::Dummy(ImVec2(0.0f, 20.0f));
     ImGui::TextWrapped("You are not allowed to reupload this modification without explicit permission from the author! You have to link to the official source.");
     ImGui::Dummy(ImVec2(0.0f, 30.0f));
-    Widget::TextCentered("Copyright Grinch_ 2021-2022");
+    Widget::TextCentered("Copyright Grinch_ 2021-2024");
     Widget::TextCentered("All rights reserved");
 }
 
@@ -383,7 +383,7 @@ void WelcomePopup() {
         ImGui::Dummy(ImVec2(0, 10));
         Widget::TextCentered("Consider supporting on Patreon!");
         ImGui::Spacing();
-        Widget::TextCentered("Copyright Grinch_ 2021-2023");
+        Widget::TextCentered("Copyright Grinch_ 2021-2024");
         Widget::TextCentered("All rights reserved");
         ImGui::EndChild();
     }

@@ -4,7 +4,6 @@
 ----------------------------
 -- Environment vars
 PSDK_DIR = os.getenv("PLUGIN_SDK_DIR")
-GTASA_DIR = "D:/Games/GTA San Andreas"
 DX9SDK_DIR = os.getenv("DXSDK_DIR")
 
 if (DX9SDK_DIR == nil) then
@@ -21,10 +20,11 @@ workspace "MapEditorSA"
     architecture "x86"
     platforms "Win32"
     language "C++"
-    cppdialect "C++20"
+    cppdialect "C++latest"
     characterset "MBCS"
     staticruntime "On"
     location "../build"
+    targetdir "../build/bin"
 
     project "depend"
         kind "StaticLib"
@@ -40,17 +40,16 @@ workspace "MapEditorSA"
         libdirs (PSDK_DIR .. "/output/lib")
 
         filter "configurations:Debug"
-            defines { "DEBUG", "IS_PLATFORM_WIN" }
+            defines {"DEBUG"}
             symbols "On"
 
         filter "configurations:Release"
-            defines { "NDEBUG", "IS_PLATFORM_WIN" }
+            defines {"NDEBUG"}
             optimize "On"
 
 
     project "MapEditorSA"
         kind "SharedLib"
-        targetdir (GTASA_DIR)
         targetextension ".asi"
         
         files { 
@@ -72,15 +71,14 @@ workspace "MapEditorSA"
         }
         
         defines { 
-            "NDEBUG", 
-            "IS_PLATFORM_WIN",
             "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NON_CONFORMING_SWPRINTFS",
             "GTASA",
             "_GTA_",
             "_DX9_SDK_INSTALLED",
             "PLUGIN_SGV_10US",
-            "GTASA"
+            "GTASA", 
+            "RW"
         }
 
         pchheader "pch.h"

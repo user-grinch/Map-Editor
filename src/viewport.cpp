@@ -80,11 +80,11 @@ ViewportMgr::ViewportMgr() {
         Viewport.m_nMoveSpeed = gConfig.Get("editor.moveSpeed", 1.0f);
     };
 
-    // highlight selected object
-    ThiscallEvent<AddressList<0x534310, H_JUMP>, PRIORITY_BEFORE, ArgPickN<CEntity*, 0>, void(CEntity*)> entityRenderEvent;
-    entityRenderEvent +=[this](CEntity *pEntity) {
-        HighlightSelectedObject(pEntity);
-    };
+    // Highlight selection
+    injector::MakeInline(0x534388, 0x53438E, [](injector::reg_pack& regs) {
+        regs.edx |= 0x2000;
+        Viewport.HighlightSelectedObject((CEntity*)regs.esi);
+    });
 }
 
 void ViewportMgr::Init() {
@@ -194,130 +194,30 @@ static void NodeWrapperRecursive(RwFrame* frame, CEntity* pEntity, std::function
 }
 
 void ViewportMgr::HighlightSelectedObject(CEntity *pEntity) {
-    
-    if (!Editor.IsOpen()) {
+    if (!Editor.IsOpen() || !pEntity || !pEntity->m_pRwClump) {
         return;
     }
 
-    if (pEntity->m_nType != ENTITY_TYPE_BUILDING && pEntity->m_nType != ENTITY_TYPE_OBJECT) {
-        return;
-    }
-
-    RpClump *pClump  = pEntity->m_pRwClump;
-    if (!pClump) {
-        return;
-    }
-    RwFrame* pFrame = (RwFrame*)pClump->object.parent;
-    NodeWrapperRecursive(pFrame, pEntity, [&](RwFrame* frame) {
-        RwFrameForAllObjects(frame, [](RwObject* object, void* data) -> RwObject* {
-            if (object->type == rpATOMIC) {
-                RpAtomic* atomic = reinterpret_cast<RpAtomic*>(object);
-                CEntity* pEntity = reinterpret_cast<CEntity*>(data);
-
-                for (int i = 0; i < atomic->geometry->matList.numMaterials; ++i) {
-                    if (pEntity == ObjMgr.m_pSelected) {
-                        atomic->geometry->matList.materials[i]->color = {255, 0, 0, 255}; 
-                        atomic->geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
-                    } 
-                    else {
-                        atomic->geometry->matList.materials[i]->color = {255, 255, 255, 255};
+    if (pEntity->m_nType == ENTITY_TYPE_BUILDING || pEntity->m_nType == ENTITY_TYPE_OBJECT) {
+        NodeWrapperRecursive((RwFrame*)pEntity->m_pRwClump->object.parent, pEntity, [&](RwFrame* frame) {
+            RwFrameForAllObjects(frame, [](RwObject* object, void* data) -> RwObject* {
+                if (object->type == rpATOMIC) {
+                    RpAtomic* atomic = reinterpret_cast<RpAtomic*>(object);
+                    CEntity* pEntity = reinterpret_cast<CEntity*>(data);
+                    for (int i = 0; i < atomic->geometry->matList.numMaterials; ++i) {
+                        if (pEntity == ObjMgr.m_pSelected) {
+                            atomic->geometry->matList.materials[i]->color = {255, 0, 0, 255}; 
+                            atomic->geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
+                        } 
+                        else {
+                            atomic->geometry->matList.materials[i]->color = {255, 255, 255, 255};
+                        }
                     }
-                    
                 }
-            }
-            return object;
-        }, pEntity);
-    });
-
-    if (ObjMgr.m_pSelected != pEntity) {
-        return;
+                return object;
+            }, pEntity);
+        });
     }
-
-    CMatrix *matrix = pEntity->GetMatrix();
-    if (!matrix) {
-        return;
-    }
-
-    unsigned short index = pEntity->m_nModelIndex;
-    if (!CModelInfo::ms_modelInfoPtrs[index]) {
-        return;
-    }
-
-    CColModel *pColModel = CModelInfo::ms_modelInfoPtrs[index]->m_pColModel;
-    if (!pColModel) {
-        return;
-    }
-
-    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)rwBLENDSRCALPHA);
-    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)rwBLENDINVSRCALPHA);
-    RwRenderStateSet(rwRENDERSTATETEXTURERASTER, NULL);
-
-    if (Interface.m_bDrawBoundingBox) {
-        CVector min = pColModel->m_boundBox.m_vecMin;
-        CVector max = pColModel->m_boundBox.m_vecMax;
-
-        CVector workVec = min;
-        CVector v1 = *matrix * workVec;
-
-        workVec.z = max.z;
-        CVector v2 = *matrix * workVec;
-
-        workVec = min;
-        workVec.x = max.x;
-        CVector v3 = *matrix * workVec;
-
-        workVec = min;
-        workVec.y = max.y;
-        CVector v4 = *matrix * workVec;
-
-        workVec = min;
-        workVec.y = max.y;
-        workVec.z = max.z;
-        CVector v5 = *matrix * workVec;
-
-        workVec = min;
-        workVec.x = max.x;
-        workVec.z = max.z;
-        CVector v6 = *matrix * workVec;
-
-        workVec = min;
-        workVec.x = max.x;
-        workVec.y = max.y;
-        CVector v7 = *matrix * workVec;
-
-        workVec = max;
-        CVector v8 = *matrix * workVec;
-
-        RenderLineWithClipping(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v1.x, v1.y, v1.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v1.x, v1.y, v1.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v5.x, v5.y, v5.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v5.x, v5.y, v5.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v5.x, v5.y, v5.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v6.x, v6.y, v6.z, v2.x, v2.y, v2.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v6.x, v6.y, v6.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v6.x, v6.y, v6.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v7.x, v7.y, v7.z, v8.x, v8.y, v8.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v7.x, v7.y, v7.z, v3.x, v3.y, v3.z, 0xFFFFFFFF, 0xFFFFFFFF);
-        RenderLineWithClipping(v7.x, v7.y, v7.z, v4.x, v4.y, v4.z, 0xFFFFFFFF, 0xFFFFFFFF);
-    }
-
-    if (ObjMgr.m_pSelected && Interface.m_bDrawAxisLines) {
-        static float length = 300.0f;
-        RwV3d pos = ObjMgr.m_pSelected->GetPosition().ToRwV3d();
-
-        RenderLineWithClipping(pos.x - length, pos.y, pos.z, pos.x + length, pos.y, pos.z, 0xFF0000FF, 0xFF0000FF);
-        RenderLineWithClipping(pos.x, pos.y - length, pos.z, pos.x, pos.y + length, pos.z, 0x00FF00FF, 0x00FF00FF);
-        RenderLineWithClipping(pos.x, pos.y, pos.z - length, pos.x, pos.y, pos.z + length, 0x0000FFFF, 0x0000FFFF);
-    }
-
-    RwRenderStateSet(rwRENDERSTATESRCBLEND, (void*)5);
-    RwRenderStateSet(rwRENDERSTATEDESTBLEND, (void*)6);
-    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)false);
-    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
 }
 
 void BrowserMgr::RenderModel() {
@@ -368,7 +268,7 @@ void BrowserMgr::RenderModel() {
     RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
     RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
 
-    RwFrameTransform(pRwFrame, &GetObjectParent (&Scene.m_pRwCamera->object.object)->modelling, rwCOMBINEREPLACE);
+    RwFrameTransform(pRwFrame, &GetObjectParent(&Scene.m_pCamera->object.object)->modelling, rwCOMBINEREPLACE);
     RwFrameTranslate(pRwFrame, &pos, rwCOMBINEPRECONCAT);
     RwFrameScale(pRwFrame, &size, rwCOMBINEPRECONCAT);
     RwFrameRotate(pRwFrame, &axis1, -90.0f + m_fRot.y, rwCOMBINEPRECONCAT);
@@ -623,9 +523,9 @@ static void ContextMenu_Paste() {
         data.m_modelName = ObjMgr.FindNameFromModel(ObjMgr.ClipBoard.m_nModel);
 
         if (Interface.m_bRandomRot) {
-            ObjMgr.ClipBoard.m_vecRot.x = Random(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
-            ObjMgr.ClipBoard.m_vecRot.y = Random(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
-            ObjMgr.ClipBoard.m_vecRot.z = Random(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
+            ObjMgr.ClipBoard.m_vecRot.x = RandomNumberInRange(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
+            ObjMgr.ClipBoard.m_vecRot.y = RandomNumberInRange(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
+            ObjMgr.ClipBoard.m_vecRot.z = RandomNumberInRange(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
         }
 
         data.SetRotation(ObjMgr.ClipBoard.m_vecRot);

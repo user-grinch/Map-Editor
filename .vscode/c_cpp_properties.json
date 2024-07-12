@@ -5,12 +5,12 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${PLUGIN_SDK_DIR}/*",
-                "${DIRECTX9_SDK_DIR}/Include/*",
+                "${DXSDK_DIR}/Include/*",
                 "${PLUGIN_SDK_DIR}/plugin_sa/*",
                 "${PLUGIN_SDK_DIR}/plugin_sa/game_sa/*",
                 "${PLUGIN_SDK_DIR}/shared/*",
                 "${PLUGIN_SDK_DIR}/shared/game/*",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
             ],
             "defines": [
                 "_DEBUG",
@@ -19,7 +19,8 @@
                 "_CRT_NON_CONFORMING_SWPRINTFS",
                 "GTASA",
                 "_DX9_SDK_INSTALLED",
-                "PLUGIN_SGV_10US"
+                "PLUGIN_SGV_10US",
+                "RW"
             ],
             "windowsSdkVersion": "10.0.19041.0",
             "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.29.30037/bin/Hostx64/x64/cl.exe",
