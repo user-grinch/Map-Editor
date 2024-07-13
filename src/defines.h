@@ -26,3 +26,7 @@
 
 #define MENU_WIDTH_FACTOR_X 2.5f
 #define MENU_HEIGHT_FACTOR_X 1.0f
+
+#define PLAYER_Z_OFFSET 0.0f
+#define MOUSE_FACTOR_X 13.0f
+#define MOUSE_FACTOR_Y 6.0f

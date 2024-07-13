@@ -34,8 +34,8 @@ class ExData {
     // ---------------------------------------------------
 
     ExData(CObject *obj) {
-        pObj = obj;
-        handle = CPools::GetObjectRef(obj);
+      pObj = obj;
+      handle = CPools::GetObjectRef(obj);
     }
 };
 

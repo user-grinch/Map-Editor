@@ -48,18 +48,6 @@ using fRtnBoolArg1_t = std::function<bool(str&)>;
 #define fRtnArgWrapper(x) [](str& a){return x(a);}
 #define fArgNoneWrapper(x) [](){x();}
 
-struct ContextMenu {
-    bool m_bShow;
-    fArg3_t m_pFunc;
-    std::string m_Root, m_Key, m_Val;
-};
-
-struct PopupMenu {
-    bool m_bShow;
-    std::string m_Title;
-    std::function<void()> m_pFunc;
-};
-
 static eRenderer gRenderer = eRenderer::Unknown;
 extern DataStore gConfig;
 

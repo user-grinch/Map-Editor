@@ -13,7 +13,7 @@ ImVec2 Widget::CalcSize(short count, bool spacing) {
         spacing = false;
     }
 
-    float x = ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().ItemSpacing.x * (spacing ? count : 1);
+    float x = ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * (spacing ? count : 1);
     return ImVec2(x / count, ImGui::GetFrameHeight() * 1.3f);
 }
 
@@ -24,7 +24,7 @@ ImVec2 Widget::CalcSizeFrame(const char* text) {
 void Widget::TextCentered(const std::string& text) {
     ImVec2 size = ImGui::CalcTextSize(text.c_str());
     ImGui::NewLine();
-    float width = ImGui::GetWindowContentRegionWidth() - size.x;
+    float width = ImGui::GetContentRegionAvail().x - size.x;
     ImGui::SameLine(width/2);
     ImGui::Text(text.c_str());
 }
@@ -56,8 +56,8 @@ bool Widget::Filter(const char* label, ImGuiTextFilter& filter, const char* hint
 
 void DrawClippedList(ResourceStore& data, fArg3_t clickFunc, bool favourites, fArgNone_t contextOptionsFunc) {
     // Category box
-    ImGui::PushItemWidth(favourites ? ImGui::GetWindowContentRegionWidth() :
-                         (ImGui::GetWindowContentRegionWidth() - ImGui::GetStyle().ItemSpacing.x)/2);
+    ImGui::PushItemWidth(favourites ? ImGui::GetContentRegionAvail().x :
+                         (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x)/2);
 
     if (!favourites) {
         if (Widget::ListBox("##Categories", data.m_Categories, data.m_Selected)) {

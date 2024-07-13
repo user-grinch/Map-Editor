@@ -8,23 +8,16 @@
 */
 class EditorMgr {
   private:
-    void ApplyStyle();
     bool m_bOpened; // Is the editor currently open
 
-    // Does basic cleaup to close the MapEditor
+    void ApplyStyle();
     void Cleanup();
 
   public:
     EditorMgr();
     EditorMgr(EditorMgr&);
 
-    // Returns true if the MapEditor is open
     bool IsOpen();
-
-    /* 
-      Processes the MapEditor code
-      Handles drawing & controls
-    */
     void Process();
 };
 

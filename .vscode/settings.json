@@ -78,6 +78,9 @@
         "codecvt": "cpp",
         "coroutine": "cpp",
         "variant": "cpp",
-        "*.rh": "cpp"
+        "*.rh": "cpp",
+        "expected": "cpp",
+        "numbers": "cpp",
+        "random": "cpp"
     }
 }

@@ -37,7 +37,7 @@ bool Hotkey::DrawUI(const char* label) {
     }
 
     std::string btnText = GetNameString();
-    ImVec2 size {ImGui::GetWindowContentRegionWidth() / 3.5f, ImGui::GetFrameHeight()*1.35f};
+    ImVec2 size {ImGui::GetContentRegionAvail().x / 3.5f, ImGui::GetFrameHeight()*1.35f};
     if (ImGui::Button(std::format("{}##{}", btnText, label).c_str(), size)) {
         if (!active) {
             m_CurrentHotkey = label;

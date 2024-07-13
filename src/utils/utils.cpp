@@ -105,9 +105,9 @@ ImVec2 Utils::GetSize(short count, bool spacing) {
     }
 
     if (spacing) {
-        x = ImGui::GetWindowContentRegionWidth() / count - factor;
+        x = ImGui::GetContentRegionAvail().x / count - factor;
     } else {
-        x = ImGui::GetWindowContentRegionWidth() / count;
+        x = ImGui::GetContentRegionAvail().x / count;
     }
 
     return ImVec2(x, ImGui::GetFrameHeight() * 1.3f);

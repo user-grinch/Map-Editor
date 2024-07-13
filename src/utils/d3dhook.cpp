@@ -115,7 +115,7 @@ void D3dHook::ProcessFrame(void* ptr) {
         ImGui_ImplWin32_EnableDpiAwareness();
 
         // Loading fonts
-        io.FontDefault = FontMgr::LoadFont("text", textFont, textFontSize, 1.4f);
+        io.FontDefault = FontMgr::LoadFont("text", textFont, textFontSize, 1.3f);
 
         io.IniFilename = nullptr;
         io.LogFilename = nullptr;
@@ -236,7 +236,6 @@ bool D3dHook::Init(std::function<void()> pCallback) {
         pCallbackFunc = pCallback;
         hookInjected = true;
     } else {
-
         if (init(kiero::RenderType::D3D11) == kiero::Status::Success) {
             gRenderer = eRenderer::DirectX11;
             kiero::bind(8, (void**)&oPresent, hkPresent);

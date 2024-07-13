@@ -29,7 +29,6 @@ float ObjectMgr::GetBoundingBoxGroundZ(CObject *pObj) {
 ObjectMgr ObjMgr;
 ObjectMgr::ObjectMgr() {
     // ---------------------------------------------------
-    // optimizations
     m_vecModelNames.reserve(50);
     m_pPlacedObjs.reserve(100);
     /*

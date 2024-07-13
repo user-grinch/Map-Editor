@@ -8,82 +8,32 @@
 #include <CModelInfo.h>
 #include <CStreaming.h>
 #include <CTxdStore.h>
-#include <CScene.h>
 #include <CSprite.h>
 #include <D3dx9math.h>
 #include "editor.h"
 
-#define PLAYER_Z_OFFSET 0.0f
-#define MOUSE_FACTOR_X 13.0f
-#define MOUSE_FACTOR_Y 6.0f
+#include "contextmenus.h"
+#include "popups.h"
 
 // Backups for restoring later on editor exit
 static BYTE m_bHudState;
 static BYTE m_bRadarState;
 static bool m_bNeverWanted;
 
-size_t BrowserMgr::GetSelected() {
-    return m_nSelectedID;
-}
-
-void BrowserMgr::SetSelected(int modelId) {
-    /*
-        Check if the model is available first!
-        If not set model to -1
-    */
-    if (modelId > 0 && Command<Commands::IS_MODEL_IN_CDIMAGE>(modelId)) {
-        CStreaming::RequestModel(modelId, PRIORITY_REQUEST);
-        CStreaming::LoadAllRequestedModels(true);
-    }
-
-    m_nSelectedID = Command<Commands::IS_MODEL_AVAILABLE>(modelId) ? modelId : NULL;
-}
-
 ImVec2 ViewportMgr::GetSize() {
-    return m_fSize;
-}
-
-// Thanks junior & Júlio César
-void BrowserMgr::LoadModel(size_t model, RpClump *&pClump, RpAtomic *&pAtomic, RwFrame *&pFrame) {
-    pClump = nullptr;
-    pAtomic = nullptr;
-    pFrame = nullptr;
-
-    if (!Command<Commands::IS_MODEL_AVAILABLE>(model)) {
-        CStreaming::RequestModel(model, PRIORITY_REQUEST);
-        CStreaming::LoadAllRequestedModels(true);
-    }
-
-    CBaseModelInfo* modelInfo = CModelInfo::GetModelInfo(model);
-    int rwModelType = modelInfo->GetRwModelType();
-    if (rwModelType == 1) {
-        RpAtomic *atomic = (RpAtomic *)modelInfo->m_pRwObject;
-        if (atomic) {
-            modelInfo->AddRef();
-
-            pFrame = RwFrameCreate();
-            pAtomic = RpAtomicClone(atomic);
-            RpAtomicSetFrame(pAtomic, pFrame);
-        }
-    } else {
-        pClump = (RpClump*)modelInfo->m_pRwObject;
-        if (pClump) {
-            modelInfo->AddRef();
-            pClump = (RpClump *)reinterpret_cast<CClumpModelInfo*>(modelInfo)->CreateInstance();
-        }
-    }
+    return m_fViewportSize;
 }
 
 ViewportMgr Viewport;
 ViewportMgr::ViewportMgr() {
     Events::initGameEvent += [this]() {
-        Viewport.m_nMoveSpeed = gConfig.Get("editor.moveSpeed", 1.0f);
+        Viewport.m_nMoveSpeedMul = gConfig.Get("editor.moveSpeed", 1.0f);
     };
 
     // Highlight selection
     injector::MakeInline(0x534388, 0x53438E, [](injector::reg_pack& regs) {
         regs.edx |= 0x2000;
-        Viewport.HighlightSelectedObject((CEntity*)regs.esi);
+        Viewport.HighlightSelection((CEntity*)regs.esi);
     });
 }
 
@@ -120,55 +70,8 @@ void ViewportMgr::Init() {
         Call<0x4396C0>();
     }
 
+    m_Renderer.Init();
     m_bInitialized = true;
-}
-
-void BrowserMgr::Process() {
-    static bool bEventsInjected;
-
-    if (!bEventsInjected) {
-        Events::drawingEvent += []() {
-            if (Viewport.Browser.m_bShown) {
-                // -------------------------------------------------
-                /*
-                * Calculations for pos & size of modelbg
-                * Similar to to InfoMenu does it
-                */
-                float width = screen::GetScreenWidth();
-                float height = screen::GetScreenHeight();
-                float menuWidth = width/5.0f;
-                float frameHeight = ImGui::GetFrameHeight();
-
-                CRect pos(0.0f, 0.0f, width, height);
-                CSprite2d::DrawRect(pos, CRGBA(0, 0, 0, 255));
-                // -------------------------------------------------
-                Viewport.Browser.RenderModel();
-            }
-        };
-        bEventsInjected = true;
-    }
-
-    // Change object browser values if it's active
-    if (Viewport.Browser.m_bShown && Viewport.m_eState == eViewportState::View) {
-        CVector mouseDelta;
-        Command<Commands::GET_PC_MOUSE_MOVEMENT>(&mouseDelta.x, &mouseDelta.y);
-        m_fRot.y += mouseDelta.y / MOUSE_FACTOR_Y;
-
-        if (!m_bAutoRot) {
-            m_fRot.x += mouseDelta.x / MOUSE_FACTOR_X;
-        }
-
-        if (CPad::NewMouseControllerState.wheelUp) {
-            m_fScale += 0.05f;
-            m_fScale = m_fScale > 5.0f ? 5.0f : m_fScale;
-        }
-
-        if (CPad::NewMouseControllerState.wheelDown) {
-            m_fScale -= 0.05f;
-            m_fScale = m_fScale < 0.0f ? 0.0f : m_fScale;
-        }
-        return;
-    }
 }
 
 /*
@@ -193,9 +96,15 @@ static void NodeWrapperRecursive(RwFrame* frame, CEntity* pEntity, std::function
     return;
 }
 
-void ViewportMgr::HighlightSelectedObject(CEntity *pEntity) {
+void ViewportMgr::HighlightSelection(CEntity *pEntity) {
+    static CEntity *prevEntity = nullptr;
     if (!Editor.IsOpen() || !pEntity || !pEntity->m_pRwClump) {
         return;
+    }
+
+    if (prevEntity && prevEntity->m_nModelIndex != pEntity->m_nModelIndex 
+    && ObjMgr.m_pSelected && pEntity->m_nModelIndex != ObjMgr.m_pSelected->m_nModelIndex) {
+        return; 
     }
 
     if (pEntity->m_nType == ENTITY_TYPE_BUILDING || pEntity->m_nType == ENTITY_TYPE_OBJECT) {
@@ -218,69 +127,7 @@ void ViewportMgr::HighlightSelectedObject(CEntity *pEntity) {
             }, pEntity);
         });
     }
-}
-
-void BrowserMgr::RenderModel() {
-    static RpClump *pRpClump;
-    static RwFrame *pRwFrame;
-    static RpAtomic *pRpAtomic;
-    static size_t loadedModelId = NULL;
-
-    size_t modelId = GetSelected();
-    if (!modelId) {
-        return;
-    }
-
-    if (loadedModelId != modelId) {
-        CBaseModelInfo *modelInfo = (CBaseModelInfo *)CModelInfo::GetModelInfo(loadedModelId);
-        if (modelInfo) modelInfo->RemoveRef();
-        if (pRpClump) RpClumpDestroy(pRpClump);
-        if (pRpAtomic) RpAtomicDestroy(pRpAtomic);
-        if (pRwFrame) RwFrameDestroy(pRwFrame);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(loadedModelId);
-        LoadModel(modelId, pRpClump, pRpAtomic, pRwFrame);
-        loadedModelId = modelId;
-    }
-
-    static float rotation = 0.0f;
-    static RwRGBAReal AmbientColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-    static RwV3d pos = { 0.f, 0.05f, 2.0f };
-
-    float f = m_fScale * 0.1f;
-    RwV3d size = {f, f, f};
-    static RwV3d axis1 = { 1.0f, 0.0f, 0.0f };
-    static RwV3d axis2 = { 0.0f, 0.0f, 1.0f };
-    static UINT32 timer = 0;
-
-    if (pRpClump) {
-        pRwFrame = (RwFrame*)pRpClump->object.parent;
-    }
-
-    if (m_bAutoRot && (CTimer::m_snTimeInMilliseconds - timer > 7)) {
-        rotation += 1.0f;
-        if (rotation > 360.0f)
-            rotation -= 360.0f;
-        timer = CTimer::m_snTimeInMilliseconds;
-    }
-
-    RwRenderStateSet(rwRENDERSTATECULLMODE, (void*)rwCULLMODECULLNONE);
-    RwRenderStateSet(rwRENDERSTATEZWRITEENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATEZTESTENABLE, (void*)true);
-    RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, (void*)true);
-
-    RwFrameTransform(pRwFrame, &GetObjectParent(&Scene.m_pCamera->object.object)->modelling, rwCOMBINEREPLACE);
-    RwFrameTranslate(pRwFrame, &pos, rwCOMBINEPRECONCAT);
-    RwFrameScale(pRwFrame, &size, rwCOMBINEPRECONCAT);
-    RwFrameRotate(pRwFrame, &axis1, -90.0f + m_fRot.y, rwCOMBINEPRECONCAT);
-    RwFrameRotate(pRwFrame, &axis2, rotation + + m_fRot.x, rwCOMBINEPRECONCAT);
-    RwFrameUpdateObjects(pRwFrame);
-    SetAmbientColours(&AmbientColor);
-
-    if (pRpClump) {
-        RpClumpRender(pRpClump);
-    } else {
-        if (pRpAtomic) pRpAtomic->renderCallBack(pRpAtomic);
-    }
+    prevEntity = pEntity;
 }
 
 void ViewportMgr::SetCameraPosn(const CVector &pos) {
@@ -291,11 +138,11 @@ void ViewportMgr::SetCameraPosn(const CVector &pos) {
     * we need to add the offset to it
     */
     m_fCamPos.z -= PLAYER_Z_OFFSET;
-    m_bCamUpdated = true;
+    m_bCamUpdateRequired = true;
 }
 
 void ViewportMgr::DrawHoverMenu() {
-    if (!Interface.m_bShowHoverMenu || m_eState != eViewportState::Edit || !m_bHovered || Browser.m_bShown) {
+    if (!Interface.m_bShowHoverMenu || m_eState != eViewportState::Edit || !m_bHovered || m_Renderer.m_bShown) {
         return;
     }
 
@@ -357,8 +204,8 @@ void ViewportMgr::Cleanup() {
     }
 
     m_eState = eViewportState::Edit;
-    Browser.m_bShown = false;
-    Browser.m_bShowNextFrame = false;
+    m_Renderer.m_bShown = false;
+    m_Renderer.m_bShowNextFrame = false;
     m_bInitialized = false;
 }
 
@@ -392,8 +239,8 @@ void ViewportMgr::DrawOverlay() {
 
     ImGui::SetNextWindowBgAlpha(0.0f); // and ofcource it needs to be transarent
     ImGui::SetNextWindowPos(ImVec2(0.0f, frameHeight));
-    m_fSize = ImVec2(width-menuWidth, height - frameHeight);
-    ImGui::SetNextWindowSize(m_fSize);
+    m_fViewportSize = ImVec2(width-menuWidth, height - frameHeight);
+    ImGui::SetNextWindowSize(m_fViewportSize);
 
     if (ImGui::Begin("ViewPort", NULL, flags)) {
         m_bHovered = ImGui::IsWindowHovered();
@@ -413,179 +260,10 @@ void ViewportMgr::DrawOverlay() {
         // }
 
         // TODO: do popup menu checks here?
-        Interface.DrawContextMenu();
+        ContextMenu.Draw();
         ImGui::End();
     }
 }
-
-static void QuickObjectCreatePopup() {
-    static int modelId = 620;
-    static std::string modelName = ObjMgr.FindNameFromModel(modelId);
-
-    ImGui::Text("Name: %s", modelName.c_str());
-    if (ImGui::InputInt("Model", &modelId)) {
-        modelName = ObjMgr.FindNameFromModel(modelId);
-    }
-    if (KeyPressed(VK_RETURN)) {
-        goto create_object;
-    }
-
-    ImGui::Spacing();
-    if (ImGui::Button("Create", Utils::GetSize(2))) {
-create_object:
-        int hObj;
-        Command<Commands::REQUEST_MODEL>(modelId);
-        Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(modelId, Viewport.m_fWorldPos.x,
-                                         Viewport.m_fWorldPos.y, Viewport.m_fWorldPos.z, &hObj);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(modelId);
-
-        CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjMgr.m_objData.Get(pEntity);
-        data.m_modelName = modelName;
-
-        ObjMgr.m_pPlacedObjs.push_back(pEntity);
-        ObjMgr.m_pSelected = pEntity;
-
-        Interface.m_PopupMenu.m_bShow = false;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Find models", Utils::GetSize(2))) {
-        ShellExecute(NULL, "open", "https://dev.prineside.com/en/gtasa_samp_model_id/", NULL, NULL, SW_SHOWNORMAL);
-    }
-    ImGui::Spacing();
-    if (ImGui::Button("Open object browser", Utils::GetSize())) {
-        Viewport.m_eState = eViewportState::Browser;
-        Interface.m_PopupMenu.m_bShow = false;
-        Viewport.Browser.m_bShowNextFrame = true;
-    }
-}
-
-static void ContextMenu_NewObject() {
-    CEntity *pEntity;
-
-    if (Utils::TraceEntity(pEntity, Viewport.m_fWorldPos)) {
-        Interface.m_PopupMenu.m_bShow = true;
-        Interface.m_PopupMenu.m_pFunc = QuickObjectCreatePopup;
-        Interface.m_PopupMenu.m_Title = "Quick object creator";
-
-    }
-}
-
-static void ContextMenu_SnapToGround() {
-    if (ObjMgr.m_pSelected) {
-        CVector objPos = ObjMgr.m_pSelected->GetPosition();
-        int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
-        float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
-        objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
-        Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos.x, objPos.y, objPos.z);
-    }
-}
-
-static void ContextMenu_Copy() {
-    if (Viewport.m_HoveredEntity) {
-        ObjMgr.ClipBoard.m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
-
-        CVector &rot = ObjMgr.ClipBoard.m_vecRot;
-        // Store rotation
-        CallMethod<0x59A840, int>((int)Viewport.m_HoveredEntity->GetMatrix(),
-                                  &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
-
-        rot.x = RAD_TO_DEG(rot.x);
-        rot.y = RAD_TO_DEG(rot.y);
-        rot.z = RAD_TO_DEG(rot.z);
-
-        // 0 -> 360
-        Utils::GetDegreeInRange(&rot.x);
-        Utils::GetDegreeInRange(&rot.y);
-        Utils::GetDegreeInRange(&rot.z);
-        CHud::SetHelpMessage("Object Copied", false, false, false);
-    }
-}
-
-static void ContextMenu_Paste() {
-    if (!ObjMgr.ClipBoard.m_nModel) {
-        return;
-    }
-
-    CEntity *pEntity;
-    CVector pos;
-    if (Command<Commands::IS_MODEL_AVAILABLE>(ObjMgr.ClipBoard.m_nModel)
-            && Utils::TraceEntity(pEntity, pos)) {
-        int hObj;
-        Command<Commands::REQUEST_MODEL>(ObjMgr.ClipBoard.m_nModel);
-        Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(ObjMgr.ClipBoard.m_nModel, pos.x, pos.y, pos.z, &hObj);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(ObjMgr.ClipBoard.m_nModel);
-
-        CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjMgr.m_objData.Get(pEntity);
-        data.m_modelName = ObjMgr.FindNameFromModel(ObjMgr.ClipBoard.m_nModel);
-
-        if (Interface.m_bRandomRot) {
-            ObjMgr.ClipBoard.m_vecRot.x = RandomNumberInRange(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
-            ObjMgr.ClipBoard.m_vecRot.y = RandomNumberInRange(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
-            ObjMgr.ClipBoard.m_vecRot.z = RandomNumberInRange(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
-        }
-
-        data.SetRotation(ObjMgr.ClipBoard.m_vecRot);
-
-        ObjMgr.m_pPlacedObjs.push_back(pEntity);
-        ObjMgr.m_pSelected = pEntity;
-    }
-}
-
-static void ContextMenu_Delete() {
-    if (ObjMgr.m_pSelected) {
-        ObjMgr.m_pSelected->Remove();
-        ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
-                                        ObjMgr.m_pPlacedObjs.end(), ObjMgr.m_pSelected), ObjMgr.m_pPlacedObjs.end());
-
-        ObjMgr.m_pSelected = nullptr;
-    }
-}
-
-void ContextMenu_Viewport(std::string& root, std::string& key, std::string& value) {
-    if (Viewport.Browser.m_bShown || Viewport.m_eState != eViewportState::Edit) {
-        return;
-    }
-
-    if (ImGui::MenuItem("New object")) {
-        ContextMenu_NewObject();
-    }
-
-    if (ImGui::MenuItem("Add to favourites")) {
-        int model = Viewport.m_HoveredEntity->m_nModelIndex;
-        std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
-        Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
-        Interface.m_favData.m_pData->Save();
-        Interface.m_favData.UpdateSearchList();
-        CHud::SetHelpMessage("Added to favourites", false, false, false);
-        Interface.m_ContextMenu.m_bShow = false;
-    }
-    ImGui::Separator();
-    if (ImGui::MenuItem("Snap to ground", NULL, false, ObjMgr.m_pSelected)) {
-        ContextMenu_SnapToGround();
-        Interface.m_ContextMenu.m_bShow = false;
-    }
-
-    if (ImGui::MenuItem("Copy")) {
-        ContextMenu_Copy();
-        Interface.m_ContextMenu.m_bShow = false;
-    }
-
-    if (ImGui::MenuItem("Paste", NULL, false, ObjMgr.ClipBoard.m_nModel != -1)) {
-        ContextMenu_Paste();
-        Interface.m_ContextMenu.m_bShow = false;
-    }
-
-    if (ImGui::MenuItem("Delete", NULL, false, ObjMgr.m_pSelected)) {
-        ContextMenu_Delete();
-        Interface.m_ContextMenu.m_bShow = false;
-    }
-    ImGui::Separator();
-}
-
 
 void ViewportMgr::Process() {
     if (!m_bInitialized) {
@@ -598,23 +276,23 @@ void ViewportMgr::Process() {
         DrawHoverMenu();
 
         if (m_bHovered && ImGui::IsMouseClicked(1)) {
-            Interface.m_ContextMenu.m_bShow = true;
-            Interface.m_ContextMenu.m_pFunc = ContextMenu_Viewport;
-            Interface.m_ContextMenu.m_Root = "";
-            Interface.m_ContextMenu.m_Key = "";
-            Interface.m_ContextMenu.m_Val = "";
+            ContextMenu.m_bShow = true;
+            ContextMenu.m_pFunc = ContextMenu_Viewport;
+            ContextMenu.m_Root = "";
+            ContextMenu.m_Key = "";
+            ContextMenu.m_Val = "";
         }
     }
 
-    Browser.Process();
+    m_Renderer.Process();
 
     // -------------------------------------------------
     // vars
     int delta = (CTimer::m_snTimeInMillisecondsNonClipped -
                  CTimer::m_snPreviousTimeInMillisecondsNonClipped);
 
-    int ratio = 1 / (1 + (delta * m_nMoveSpeed));
-    float speed = (m_nMoveSpeed + m_nMoveSpeed * ratio * delta);
+    int ratio = 1 / (1 + (delta * m_nMoveSpeedMul));
+    float speed = (m_nMoveSpeedMul + m_nMoveSpeedMul * ratio * delta);
 
     CPlayerPed* pPlayer = FindPlayerPed(-1);
     int hPlayer = CPools::GetPedRef(pPlayer);
@@ -622,9 +300,9 @@ void ViewportMgr::Process() {
     // -------------------------------------------------
     // Check if camera position was updated externally
     // If it was then change to new values
-    if (m_bCamUpdated) {
+    if (m_bCamUpdateRequired) {
         pos = m_fCamPos;
-        m_bCamUpdated = false;
+        m_bCamUpdateRequired = false;
     }
 
     if (Interface.m_bInputLocked) {
@@ -703,7 +381,7 @@ void ViewportMgr::Process() {
 
     // -------------------------------------------------
     // Calcualte the zoom here
-    if (m_eState == eViewportState::View) {
+    if (m_eState == eViewportState::View && !m_Renderer.m_bShown) {
         if (CPad::NewMouseControllerState.wheelUp) {
             if (m_fFOV > 10.0f) {
                 m_fFOV -= 2.0f;
@@ -756,12 +434,12 @@ void ViewportMgr::ProcessInputs() {
     static int hObj = NULL;
     static CVector off; // offset between the mouse and the object pivot
 
-    if (!(Interface.m_PopupMenu.m_bShow && Interface.m_ContextMenu.m_bShow)) {
+    if (!(Popup.m_bShow && ContextMenu.m_bShow)) {
         // -------------------------------------------------
         // X, Y, Z axis movement
         // TODO: Z axis is kinda buggy
 
-        if (!Browser.m_bShown) {
+        if (!m_Renderer.m_bShown) {
             static bool bObjectBeingDragged;
 
             if (ImGui::IsMouseDown(0) && ObjMgr.m_pSelected) {
