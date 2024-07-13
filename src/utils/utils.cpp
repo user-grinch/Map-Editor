@@ -90,6 +90,9 @@ bool Utils::GetCursorPosition(CVector2D& vecCursor, CVector& vecWorld) {
     return true;
 }
 
+float Utils::GetContentRegionWidth() {
+    return ImGui::GetWindowContentRegionMax().x - ImGui::GetWindowContentRegionMin().x;
+}
 
 ImVec2 Utils::GetSize(short count, bool spacing) {
 
@@ -105,9 +108,9 @@ ImVec2 Utils::GetSize(short count, bool spacing) {
     }
 
     if (spacing) {
-        x = ImGui::GetContentRegionAvail().x / count - factor;
+        x = Utils::GetContentRegionWidth() / count - factor;
     } else {
-        x = ImGui::GetContentRegionAvail().x / count;
+        x = Utils::GetContentRegionWidth() / count;
     }
 
     return ImVec2(x, ImGui::GetFrameHeight() * 1.3f);

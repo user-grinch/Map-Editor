@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "hotkeys.h"
+#include "utils.h"
 
 const size_t HOTKEY_START = 3;
 const size_t HOTKEY_END = 135;
@@ -37,7 +38,7 @@ bool Hotkey::DrawUI(const char* label) {
     }
 
     std::string btnText = GetNameString();
-    ImVec2 size {ImGui::GetContentRegionAvail().x / 3.5f, ImGui::GetFrameHeight()*1.35f};
+    ImVec2 size {Utils::GetContentRegionWidth() / 3.5f, ImGui::GetFrameHeight()*1.35f};
     if (ImGui::Button(std::format("{}##{}", btnText, label).c_str(), size)) {
         if (!active) {
             m_CurrentHotkey = label;

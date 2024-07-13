@@ -359,7 +359,7 @@ void InterfaceMgr::DrawSidepanel() {
                             }
                         
                             ImGui::Spacing();
-                            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                            ImGui::SetNextItemWidth(Utils::GetContentRegionWidth());
                             Widget::Filter("##Search", filter, "Search");
                             if (ImGui::IsItemActive()) {
                                 m_bInputLocked = true;
@@ -487,7 +487,7 @@ void InterfaceMgr::DrawSidepanel() {
                 ImGui::Text("Total models loaded: %d", ObjMgr.m_nTotalIDELine);
                 ImGui::Spacing();
                 ImGui::Checkbox("Auto rotate", &Viewport.m_Renderer.m_bAutoRot);
-                ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x/2);
+                ImGui::SetNextItemWidth(Utils::GetContentRegionWidth()/2);
                 ImGui::SliderFloat("Render scale", &Viewport.m_Renderer.m_fScale, 0.0f, 5.0f);
                 ImGui::Spacing();
                 if (ImGui::Button("Copy object", Utils::GetSize())) {
@@ -498,7 +498,7 @@ void InterfaceMgr::DrawSidepanel() {
                 if(ImGui::BeginTabBar("Broweser Tab", ImGuiTabBarFlags_NoTooltip)) {
                     if(ImGui::BeginTabItem("IDE Search")) {
                         ImGui::Spacing();
-                        ImGui::PushItemWidth((ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x)/2);
+                        ImGui::PushItemWidth((Utils::GetContentRegionWidth() - ImGui::GetStyle().ItemSpacing.x)/2);
 
                         if (Widget::ListBox("##IDEBox", iplList, selected)) {
                              for (auto &data : ObjMgr.m_vecModelNames) {
@@ -537,7 +537,7 @@ void InterfaceMgr::DrawSidepanel() {
                     if(ImGui::BeginTabItem("Full search")) {
                         static std::vector<std::pair<int, std::string>> searchResults;
                         ImGui::Spacing();
-                        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+                        ImGui::SetNextItemWidth(Utils::GetContentRegionWidth());
                         Widget::Filter("##Filter", totalFilter, "trashcan");
                         if(ImGui::IsItemActive()) {
                             m_bInputLocked = true;

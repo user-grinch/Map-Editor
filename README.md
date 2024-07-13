@@ -1,7 +1,7 @@
 # Map Editor
 In Game Map Editor for Grand Theft Auto Sanandreas. Press <kbd>Left Ctrl</kbd> + <kbd>Tab</kbd> to open the menu. Video [here](https://www.youtube.com/watch?v=h0GLNH-ydbQ)
 
-[![Discord Banner 2](https://discordapp.com/api/guilds/689515979847237649/widget.png?style=banner2)](https://discord.com/invite/ZzW7kmf)
+[![Discord Banner 2](https://discordapp.com/api/guilds/689515979847237649/widget.png?style=banner2)](https://discord.gg/AduJVdyqCD)
 
 ## Installation
 1. Install [DirectX9](https://www.microsoft.com/en-us/download/details.aspx?id=35), [Visual C++ Redistributable 2022 x86](https://aka.ms/vs/17/release/vc_redist.x86.exe) & [Asi loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases).
