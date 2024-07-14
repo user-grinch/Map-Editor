@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "viewport.h"
 #include "utils/utils.h"
-#include "objectmgr.h"
+#include "entitymgr.h"
 #include "interface.h"
 #include "utils/hotkeys.h"
 #include <CHud.h>
@@ -103,7 +103,7 @@ void ViewportMgr::HighlightSelection(CEntity *pEntity) {
     }
 
     if (prevEntity && prevEntity->m_nModelIndex != pEntity->m_nModelIndex 
-    && ObjMgr.m_pSelected && pEntity->m_nModelIndex != ObjMgr.m_pSelected->m_nModelIndex) {
+    && EntMgr.m_pSelected && pEntity->m_nModelIndex != EntMgr.m_pSelected->m_nModelIndex) {
         return; 
     }
 
@@ -114,7 +114,7 @@ void ViewportMgr::HighlightSelection(CEntity *pEntity) {
                     RpAtomic* atomic = reinterpret_cast<RpAtomic*>(object);
                     CEntity* pEntity = reinterpret_cast<CEntity*>(data);
                     for (int i = 0; i < atomic->geometry->matList.numMaterials; ++i) {
-                        if (pEntity == ObjMgr.m_pSelected) {
+                        if (pEntity == EntMgr.m_pSelected) {
                             atomic->geometry->matList.materials[i]->color = {255, 0, 0, 255}; 
                             atomic->geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
                         } 
@@ -157,7 +157,7 @@ void ViewportMgr::DrawHoverMenu() {
 
             // lets not go over 20000 models each frame
             if (bmodel != model) {
-                name = ObjMgr.FindNameFromModel(model);
+                name = EntMgr.FindNameFromModel(model);
                 bmodel = model;
             }
 
@@ -419,10 +419,10 @@ void ViewportMgr::ProcessInputs() {
         CVector pos;
 
         if (Utils::TraceEntity(pEntity, pos)) {
-            ObjMgr.m_pSelected = nullptr;
-            for (auto &ent : ObjMgr.m_pPlacedObjs) {
+            EntMgr.m_pSelected = nullptr;
+            for (auto &ent : EntMgr.m_pPlaced) {
                 if (ent == pEntity) {
-                    ObjMgr.m_pSelected = (CObject*)pEntity;
+                    EntMgr.m_pSelected = (CObject*)pEntity;
                     break;
                 }
             }
@@ -442,25 +442,25 @@ void ViewportMgr::ProcessInputs() {
         if (!m_Renderer.m_bShown) {
             static bool bObjectBeingDragged;
 
-            if (ImGui::IsMouseDown(0) && ObjMgr.m_pSelected) {
+            if (ImGui::IsMouseDown(0) && EntMgr.m_pSelected) {
                 CEntity *pEntity;
                 static CVector pos, off;
                 bool bFound = Utils::TraceEntity(pEntity, pos);
 
                 if (bFound) {
                     if (bObjectBeingDragged) {
-                        auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
+                        auto &data = EntMgr.m_Info.Get(EntMgr.m_pSelected);
                         CVector objPos = CVector(pos.x - off.x, pos.y - off.y, pos.z - off.z);
 
                         if (Interface.m_bAutoSnapToGround) {
-                            float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
+                            float offZ = objPos.z - EntMgr.GetBoundingBoxGroundZ(EntMgr.m_pSelected);
                             objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
                             off.z = pos.z - objPos.z;
                         }
 
-                        Command<Commands::SET_OBJECT_COORDINATES>(data.handle, objPos.x, objPos.y, objPos.z);
+                        Command<Commands::SET_OBJECT_COORDINATES>(data.m_nHandle, objPos.x, objPos.y, objPos.z);
                     } else {
-                        if (pEntity == ObjMgr.m_pSelected) {
+                        if (pEntity == EntMgr.m_pSelected) {
                             off = pos - pEntity->GetPosition();
                             bObjectBeingDragged = true;
                         }
@@ -468,12 +468,12 @@ void ViewportMgr::ProcessInputs() {
                 }
             } else {
                 if (bObjectBeingDragged
-                        && Interface.m_bAutoSnapToGround && ObjMgr.m_pSelected) {
-                    auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
-                    CVector pos = ObjMgr.m_pSelected->GetPosition();
-                    float offZ = pos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
+                        && Interface.m_bAutoSnapToGround && EntMgr.m_pSelected) {
+                    auto &data = EntMgr.m_Info.Get(EntMgr.m_pSelected);
+                    CVector pos = EntMgr.m_pSelected->GetPosition();
+                    float offZ = pos.z - EntMgr.GetBoundingBoxGroundZ(EntMgr.m_pSelected);
                     pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
-                    Command<Commands::SET_OBJECT_COORDINATES>(data.handle, pos.x, pos.y, pos.z);
+                    Command<Commands::SET_OBJECT_COORDINATES>(data.m_nHandle, pos.x, pos.y, pos.z);
                 }
                 bObjectBeingDragged = false;
             }
@@ -483,10 +483,10 @@ void ViewportMgr::ProcessInputs() {
         // Z axis movement
         ImGuiIO &io = ImGui::GetIO();
         float wheel = io.MouseWheel;
-        if (wheel && ObjMgr.m_pSelected && m_eState == eViewportState::Edit) {
+        if (wheel && EntMgr.m_pSelected && m_eState == eViewportState::Edit) {
             if (KeyPressed(VK_LCONTROL)) {
-                auto &data = ObjMgr.m_objData.Get(ObjMgr.m_pSelected);
-                CVector rot = data.GetRotation();
+                auto &data = EntMgr.m_Info.Get(EntMgr.m_pSelected);
+                CVector rot = data.GetEuler();
                 rot.z += 3*wheel;
 
                 if (rot.z > 360.0f) {
@@ -497,10 +497,10 @@ void ViewportMgr::ProcessInputs() {
                     rot.z += 360.0f;
                 }
 
-                data.SetRotation(rot);
+                data.SetEuler(rot);
             } else {
-                CVector objPos = ObjMgr.m_pSelected->GetPosition();
-                Command<Commands::SET_OBJECT_COORDINATES>(CPools::GetObjectRef(ObjMgr.m_pSelected),
+                CVector objPos = EntMgr.m_pSelected->GetPosition();
+                Command<Commands::SET_OBJECT_COORDINATES>(CPools::GetObjectRef(EntMgr.m_pSelected),
                         objPos.x, objPos.y, objPos.z + wheel/3);
             }
         }

@@ -2,7 +2,7 @@
 #include "utils/widget.h"
 #include "filemgr.h"
 #include "utils/utils.h"
-#include "objectmgr.h"
+#include "entitymgr.h"
 #include "interface.h"
 #include "viewport.h"
 #include "popups.h"
@@ -31,11 +31,11 @@ void Popup_Import() {
         }
         ImGui::SameLine();
         if (ImGui::Button("Clear placed objects", Utils::GetSize(2))) {
-            for (auto &pObj : ObjMgr.m_pPlacedObjs) {
+            for (auto &pObj : EntMgr.m_pPlaced) {
                 pObj->Remove();
             }
-            ObjMgr.m_pSelected = nullptr;
-            ObjMgr.m_pPlacedObjs.clear();
+            EntMgr.m_pSelected = nullptr;
+            EntMgr.m_pPlaced.clear();
             CHud::SetHelpMessage("Current objects cleared", false, false, false);
         }
         ImGui::Spacing();

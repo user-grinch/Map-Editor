@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "utils/utils.h"
 #include "viewport.h"
-#include "objectmgr.h"
+#include "entitymgr.h"
 #include "interface.h"
 #include "contextmenus.h"
 #include "popups.h"
@@ -10,11 +10,11 @@ ContextMenus ContextMenu;
 
 static void QuickObjectCreatePopup() {
     static int modelId = 620;
-    static std::string modelName = ObjMgr.FindNameFromModel(modelId);
+    static std::string modelName = EntMgr.FindNameFromModel(modelId);
 
     ImGui::Text("Name: %s", modelName.c_str());
     if (ImGui::InputInt("Model", &modelId)) {
-        modelName = ObjMgr.FindNameFromModel(modelId);
+        modelName = EntMgr.FindNameFromModel(modelId);
     }
     if (KeyPressed(VK_RETURN)) {
         goto create_object;
@@ -31,11 +31,11 @@ create_object:
         Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(modelId);
 
         CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjMgr.m_objData.Get(pEntity);
-        data.m_modelName = modelName;
+        auto &data = EntMgr.m_Info.Get(pEntity);
+        data.m_sModelName = modelName;
 
-        ObjMgr.m_pPlacedObjs.push_back(pEntity);
-        ObjMgr.m_pSelected = pEntity;
+        EntMgr.m_pPlaced.push_back(pEntity);
+        EntMgr.m_pSelected = pEntity;
 
         Popup.m_bShow = false;
     }
@@ -56,7 +56,7 @@ void ContextMenu_RegularNoRemoveMenu(std::string& root, std::string& key, std::s
     };
 
     if (ImGui::MenuItem("Copy")) {
-        ObjMgr.ClipBoard.m_nModel = std::stoi(value);
+        EntMgr.ClipBoard.m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     };
 }
@@ -73,10 +73,10 @@ void ContextMenu_NewObject() {
 }
 
 void ContextMenu_SnapToGround() {
-    if (ObjMgr.m_pSelected) {
-        CVector objPos = ObjMgr.m_pSelected->GetPosition();
-        int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
-        float offZ = objPos.z - ObjMgr.GetBoundingBoxGroundZ(ObjMgr.m_pSelected);
+    if (EntMgr.m_pSelected) {
+        CVector objPos = EntMgr.m_pSelected->GetPosition();
+        int hObj = CPools::GetObjectRef(EntMgr.m_pSelected);
+        float offZ = objPos.z - EntMgr.GetBoundingBoxGroundZ(EntMgr.m_pSelected);
         objPos.z = CWorld::FindGroundZFor3DCoord(objPos.x, objPos.y, objPos.z + 100.0f, nullptr, nullptr) + offZ;
         Command<Commands::SET_OBJECT_COORDINATES>(hObj, objPos.x, objPos.y, objPos.z);
     }
@@ -84,9 +84,9 @@ void ContextMenu_SnapToGround() {
 
 void ContextMenu_Copy() {
     if (Viewport.m_HoveredEntity) {
-        ObjMgr.ClipBoard.m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
+        EntMgr.ClipBoard.m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
 
-        CVector &rot = ObjMgr.ClipBoard.m_vecRot;
+        CVector &rot = EntMgr.ClipBoard.m_Rot;
         // Store rotation
         CallMethod<0x59A840, int>((int)Viewport.m_HoveredEntity->GetMatrix(),
                                   &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
@@ -104,44 +104,44 @@ void ContextMenu_Copy() {
 }
 
 void ContextMenu_Paste() {
-    if (!ObjMgr.ClipBoard.m_nModel) {
+    if (!EntMgr.ClipBoard.m_nModel) {
         return;
     }
 
     CEntity *pEntity;
     CVector pos;
-    if (Command<Commands::IS_MODEL_AVAILABLE>(ObjMgr.ClipBoard.m_nModel)
+    if (Command<Commands::IS_MODEL_AVAILABLE>(EntMgr.ClipBoard.m_nModel)
             && Utils::TraceEntity(pEntity, pos)) {
         int hObj;
-        Command<Commands::REQUEST_MODEL>(ObjMgr.ClipBoard.m_nModel);
+        Command<Commands::REQUEST_MODEL>(EntMgr.ClipBoard.m_nModel);
         Command<Commands::LOAD_ALL_MODELS_NOW>();
-        Command<Commands::CREATE_OBJECT>(ObjMgr.ClipBoard.m_nModel, pos.x, pos.y, pos.z, &hObj);
-        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(ObjMgr.ClipBoard.m_nModel);
+        Command<Commands::CREATE_OBJECT>(EntMgr.ClipBoard.m_nModel, pos.x, pos.y, pos.z, &hObj);
+        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(EntMgr.ClipBoard.m_nModel);
 
         CObject *pEntity = CPools::GetObject(hObj);
-        auto &data = ObjMgr.m_objData.Get(pEntity);
-        data.m_modelName = ObjMgr.FindNameFromModel(ObjMgr.ClipBoard.m_nModel);
+        auto &data = EntMgr.m_Info.Get(pEntity);
+        data.m_sModelName = EntMgr.FindNameFromModel(EntMgr.ClipBoard.m_nModel);
 
         if (Interface.m_bRandomRot) {
-            ObjMgr.ClipBoard.m_vecRot.x = RandomNumberInRange(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
-            ObjMgr.ClipBoard.m_vecRot.y = RandomNumberInRange(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
-            ObjMgr.ClipBoard.m_vecRot.z = RandomNumberInRange(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
+            EntMgr.ClipBoard.m_Rot.x = RandomNumberInRange(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
+            EntMgr.ClipBoard.m_Rot.y = RandomNumberInRange(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
+            EntMgr.ClipBoard.m_Rot.z = RandomNumberInRange(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
         }
 
-        data.SetRotation(ObjMgr.ClipBoard.m_vecRot);
+        data.SetEuler(EntMgr.ClipBoard.m_Rot);
 
-        ObjMgr.m_pPlacedObjs.push_back(pEntity);
-        ObjMgr.m_pSelected = pEntity;
+        EntMgr.m_pPlaced.push_back(pEntity);
+        EntMgr.m_pSelected = pEntity;
     }
 }
 
 void Action_RemoveSelectedObject() {
-    if (ObjMgr.m_pSelected) {
-        ObjMgr.m_pSelected->Remove();
-        ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
-                                        ObjMgr.m_pPlacedObjs.end(), ObjMgr.m_pSelected), ObjMgr.m_pPlacedObjs.end());
+    if (EntMgr.m_pSelected) {
+        EntMgr.m_pSelected->Remove();
+        EntMgr.m_pPlaced.erase(std::remove(EntMgr.m_pPlaced.begin(),
+                                        EntMgr.m_pPlaced.end(), EntMgr.m_pSelected), EntMgr.m_pPlaced.end());
 
-        ObjMgr.m_pSelected = nullptr;
+        EntMgr.m_pSelected = nullptr;
     }
 }
 
@@ -155,11 +155,11 @@ void Action_MoveCamToObject(CObject *pObj) {
     vec = *matrix * vec;
 
     Viewport.SetCameraPosn(vec);
-    ObjMgr.m_pSelected = pObj;
+    EntMgr.m_pSelected = pObj;
 }
 
 void Action_AddToFavourites(int model) {
-    std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
+    std::string keyName = std::to_string(model) + " - " + EntMgr.FindNameFromModel(model);
     Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), std::to_string(model));
     Interface.m_favData.m_pData->Save();
     Interface.m_favData.UpdateSearchList(true);
@@ -193,7 +193,7 @@ void ContextMenu_RegularMenu(std::string& root, std::string& key, std::string& v
     };
 
     if (ImGui::MenuItem("Copy")) {
-        ObjMgr.ClipBoard.m_nModel = std::stoi(value);
+        EntMgr.ClipBoard.m_nModel = std::stoi(value);
         CHud::SetHelpMessage("Object Copied", false, false, false);
         ContextMenu.m_bShow = false;
     }
@@ -202,8 +202,8 @@ void ContextMenu_RegularMenu(std::string& root, std::string& key, std::string& v
         CObject *pObj = (CObject*)std::stoi(value);
         if (pObj) {
             pObj->Remove();
-            ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
-                                            ObjMgr.m_pPlacedObjs.end(), pObj), ObjMgr.m_pPlacedObjs.end());
+            EntMgr.m_pPlaced.erase(std::remove(EntMgr.m_pPlaced.begin(),
+                                            EntMgr.m_pPlaced.end(), pObj), EntMgr.m_pPlaced.end());
         }
         ContextMenu.m_bShow = false;
     }
@@ -225,7 +225,7 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
         ContextMenu.m_bShow = false;
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Snap to ground", NULL, false, ObjMgr.m_pSelected)) {
+    if (ImGui::MenuItem("Snap to ground", NULL, false, EntMgr.m_pSelected)) {
         ContextMenu_SnapToGround();
         ContextMenu.m_bShow = false;
     }
@@ -235,12 +235,12 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
         ContextMenu.m_bShow = false;
     }
 
-    if (ImGui::MenuItem("Paste", NULL, false, ObjMgr.ClipBoard.m_nModel != -1)) {
+    if (ImGui::MenuItem("Paste", NULL, false, EntMgr.ClipBoard.m_nModel != -1)) {
         ContextMenu_Paste();
         ContextMenu.m_bShow = false;
     }
 
-    if (ImGui::MenuItem("Delete", NULL, false, ObjMgr.m_pSelected)) {
+    if (ImGui::MenuItem("Delete", NULL, false, EntMgr.m_pSelected)) {
         Action_RemoveSelectedObject();
         ContextMenu.m_bShow = false;
     }

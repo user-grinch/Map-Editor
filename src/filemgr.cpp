@@ -1,48 +1,10 @@
 #include "pch.h"
 #include "filemgr.h"
-#include "objectmgr.h"
+#include "entitymgr.h"
 #include "utils/utils.h"
 #include "defines.h"
 #include <fstream>
 #include <CHud.h>
-
-void FileMgr::ImportIDE(std::string path, bool logImports) {
-    if (std::filesystem::exists(path)) {
-        for (const auto& dirEntry : std::filesystem::recursive_directory_iterator(path)) {
-            if (dirEntry.path().extension() == ".ide") {
-                std::ifstream file(dirEntry.path());
-                std::string line;
-                std::vector<std::pair<int, std::string>> temp;
-
-                while (std::getline(file, line)) {
-                    if (line.starts_with("#")) {
-                        continue;
-                    }
-
-                    if (logImports) {
-                        Log::Print<eLogLevel::Debug>("Parsing line: %s\n", line);
-                    }
-
-                    int model, unk2;
-                    char dffName[32], txdName[32];
-                    float unk;
-                    int rtn = sscanf(line.c_str(), "%d, %s, %s, %f, %d", &model, dffName, txdName, &unk, &unk2);
-
-                    if (rtn == 2) {
-                        char *c = strchr(dffName, ',');
-                        if (c) {
-                            *c = '\0';
-                        }
-                        temp.push_back({model, std::string(dffName)});
-                    }
-                }
-
-                ObjMgr.m_vecModelNames.push_back({dirEntry.path().stem().string(), std::move(temp)});
-                ObjMgr.m_nTotalIDELine++;
-            }
-        }
-    }
-}
 
 void FileMgr::ImportIPL(std::string fileName, bool logImports) {
     static int counter = 0;
@@ -73,29 +35,29 @@ void FileMgr::ImportIPL(std::string fileName, bool logImports) {
             Command<Commands::CREATE_OBJECT>(model, pos.x, pos.y, pos.z, &hObj);
 
             CObject *pObj = CPools::GetObject(hObj);
-            auto &data = ObjMgr.m_objData.Get(pObj);
+            auto &data = EntMgr.m_Info.Get(pObj);
             Command<Commands::SET_OBJECT_QUATERNION>(hObj, rx, ry, rz, rw);
 
             // Store rotation
-            CVector rot;
-            CallMethod<0x59A840, int>((int)pObj->GetMatrix(), &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
+            // CVector rot;
+            // CallMethod<0x59A840, int>((int)pObj->GetMatrix(), &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
 
-            rot.x = RAD_TO_DEG(rot.x);
-            rot.y = RAD_TO_DEG(rot.y);
-            rot.z = RAD_TO_DEG(rot.z);
+            // rot.x = RAD_TO_DEG(rot.x);
+            // rot.y = RAD_TO_DEG(rot.y);
+            // rot.z = RAD_TO_DEG(rot.z);
 
-            // 0 -> 360
-            Utils::GetDegreeInRange(&rot.x);
-            Utils::GetDegreeInRange(&rot.y);
-            Utils::GetDegreeInRange(&rot.z);
-            data.SetRotation(rot, false);
-            data.SetQuat({rx, ry, rz, rw});
-            data.m_modelName = ObjMgr.FindNameFromModel(pObj->m_nModelIndex);
+            // // 0 -> 360
+            // Utils::GetDegreeInRange(&rot.x);
+            // Utils::GetDegreeInRange(&rot.y);
+            // Utils::GetDegreeInRange(&rot.z);
+            // data.SetEuler(rot, false);
+            // data.SetQuat({rx, ry, rz, rw});
+            data.m_sModelName = EntMgr.FindNameFromModel(pObj->m_nModelIndex);
 
             // Setting quat messes with z coord?
-            Command<Commands::SET_OBJECT_COORDINATES>(hObj, pos.x, pos.y, pos.z);
+            // Command<Commands::SET_OBJECT_COORDINATES>(hObj, pos.x, pos.y, pos.z);
             Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
-            ObjMgr.m_pPlacedObjs.push_back(CPools::GetObject(hObj));
+            EntMgr.m_pPlaced.push_back(CPools::GetObject(hObj));
         }
     }
     CHud::SetHelpMessage("IPL imported", false, false, false);
@@ -105,11 +67,11 @@ void FileMgr::ExportIPL(const char* fileName) {
     std::fstream file;
     file.open(std::string(PLUGIN_PATH((char*)FILE_NAME"/")) + fileName, std::ios::out);
     file << "# Generated using Map Editor by Grinch_\ninst" << std::endl;
-    for (CObject *pObj : ObjMgr.m_pPlacedObjs) {
+    for (CObject *pObj : EntMgr.m_pPlaced) {
         int model = pObj->m_nModelIndex;
-        auto &data = ObjMgr.m_objData.Get(pObj);
+        auto &data = EntMgr.m_Info.Get(pObj);
         CVector pos;
-        Command<Commands::GET_OBJECT_COORDINATES>(data.handle, &pos.x, &pos.y, &pos.z);
+        Command<Commands::GET_OBJECT_COORDINATES>(data.m_nHandle, &pos.x, &pos.y, &pos.z);
         auto quat = data.GetQuat();
 
         // These don't work
@@ -122,8 +84,8 @@ void FileMgr::ExportIPL(const char* fileName) {
         // }
 
         file << std::format("{}, {}, 0, {}, {}, {},  {}, {}, {}, {}, -1",
-                            model, ObjMgr.FindNameFromModel(model), pos.x, pos.y, pos.z,
-                            quat.x,  quat.y,  quat.z, quat.w)
+                            model, EntMgr.FindNameFromModel(model), pos.x, pos.y, pos.z,
+                            quat.imag.x,  quat.imag.y,  quat.imag.z, quat.real)
              << std::endl;
     }
     file << "end" << std::endl;

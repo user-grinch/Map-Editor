@@ -5,7 +5,7 @@
 #include <CHud.h>
 #include <CMenuManager.h>
 #include "filemgr.h"
-#include "objectmgr.h"
+#include "entitymgr.h"
 
 bool EditorMgr::IsOpen() {
     return m_bOpened;
@@ -80,7 +80,7 @@ EditorMgr::EditorMgr() {
         }
 
         if (copyHoveredObjName.Pressed()) {
-            std::string name = ObjMgr.FindNameFromModel(Viewport.m_HoveredEntity->m_nModelIndex);
+            std::string name = EntMgr.FindNameFromModel(Viewport.m_HoveredEntity->m_nModelIndex);
             ImGui::SetClipboardText(name.c_str());
             CHud::SetHelpMessage("Copied to clipboard", false, false, false);
         }
@@ -126,7 +126,7 @@ void EditorMgr::Process() {
             }
             Interface.m_bInputLocked = false;
 
-            if (Interface.m_bAutoSave && ObjMgr.m_pPlacedObjs.size() > 0) {
+            if (Interface.m_bAutoSave && EntMgr.m_pPlaced.size() > 0) {
                 static size_t timer = CTimer::m_snTimeInMilliseconds;
                 size_t curTimer = CTimer::m_snTimeInMilliseconds;
 

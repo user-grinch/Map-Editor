@@ -6,7 +6,6 @@ class FileMgr {
     FileMgr(FileMgr&) = delete;
 
     static void ExportIPL(const char* fileName);
-    static void ImportIDE(std::string fileName, bool logImports = false);
     static void ImportIPL(std::string fileName, bool logImports = false);
 };
 
