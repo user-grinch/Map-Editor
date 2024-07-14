@@ -180,14 +180,7 @@ void Widget::DataList(ResourceStore& data, fArg3_t clickFunc, fArgNone_t addFunc
 
 
 void Widget::DataListFav(ResourceStore& data, fArg3_t clickFunc, fArgNone_t contextOptionsFunc) {
-    if (ImGui::IsMouseClicked(1)) {
-        contextMenu.show = false;
-    }
-    ImGui::Spacing();
     DrawClippedList(data, clickFunc, true, contextOptionsFunc);
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-        data.UpdateSearchList(true);
-    }
 }
 
 bool Widget::ListBox(const char* label, VecStr& allItems, std::string& selected) {

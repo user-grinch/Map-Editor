@@ -37,6 +37,7 @@ InterfaceMgr::InterfaceMgr() {
             m_bWelcomeShown = true;
             gConfig.Set("editor.welcomeDisplayed", m_bWelcomeShown);
         }
+        Interface.m_favData.UpdateSearchList(true);
     };
 }
 
@@ -228,7 +229,7 @@ void InterfaceMgr::DrawSidepanel() {
                 if (ImGui::BeginChild("Editor child")) {
                     ImGui::Dummy({0, 20});
                     // ---------------------------------------------------
-                    // Object info
+                    // Object infoF
                     if (ObjMgr.m_pSelected) {
                         if (ImGui::CollapsingHeader("Object selection", ImGuiTreeNodeFlags_DefaultOpen)) {
                             int hObj = CPools::GetObjectRef(ObjMgr.m_pSelected);
@@ -265,8 +266,15 @@ void InterfaceMgr::DrawSidepanel() {
                                 ImGui::Text("Type: Unknown");
                             }
                             ImGui::Columns(1);
-
-                            ImGui::Spacing();
+                            ImGui::Dummy({0, 15});
+                            if (ImGui::Button("Goto", Utils::GetSize(2))) {
+                                Action_MoveCamToObject(ObjMgr.m_pSelected);
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Button("Remove", Utils::GetSize(2))) {
+                                Action_RemoveSelectedObject();
+                            }
+                            ImGui::Dummy({0, 10});
                             CVector rot = data.GetRotation();
 
                             if (ImGui::InputFloat("Pos X##Obj", &objPos->x)) {
@@ -313,6 +321,11 @@ void InterfaceMgr::DrawSidepanel() {
                     // Camera
                     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
                         CVector pos = TheCamera.GetPosition();
+                        float heading = TheCamera.GetHeading();
+                        ImGui::Text("Heading: %f", heading);
+                        CVector test = TheCamera.m_vecAttachedCamLookAt; 
+                        ImGui::Text("Look at X:%f Y:%f Z:%f", test.x, test.y, test.z);
+
                         if (ImGui::InputFloat("Pos X##Cam", &pos.x)) {
                             Viewport.SetCameraPosn(pos);
                         }
@@ -365,38 +378,29 @@ void InterfaceMgr::DrawSidepanel() {
                                 m_bInputLocked = true;
                             }
                             ImGui::Spacing();
-                            if (ImGui::BeginChild("Objects child")) {
-                                for (size_t i = 0; i < ObjMgr.m_pPlacedObjs.size(); i++) {
-                                    CObject *pObj = ObjMgr.m_pPlacedObjs[i];
-                                    auto &data = ObjMgr.m_objData.Get(pObj);
+                            ImGui::BeginChild("Objects child");
+                            for (size_t i = 0; i < ObjMgr.m_pPlacedObjs.size(); i++) {
+                                CObject *pObj = ObjMgr.m_pPlacedObjs[i];
+                                auto &data = ObjMgr.m_objData.Get(pObj);
 
-                                    if (data.m_modelName == "") {
-                                        data.m_modelName = ObjMgr.FindNameFromModel(pObj->m_nModelIndex);
-                                    }
-                                    char buf[32];
-                                    sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
-
-                                    if (filter.PassFilter(buf) && ImGui::MenuItem(buf)) {
-                                        // Setting the camera pos to bounding box
-                                        CMatrix *matrix = pObj->GetMatrix();
-                                        CColModel *pColModel = pObj->GetColModel();
-                                        CVector min = pColModel->m_boundBox.m_vecMin;
-                                        CVector max = pColModel->m_boundBox.m_vecMax;
-
-                                        CVector workVec = min;
-                                        workVec.x = max.x;
-                                        workVec.z = max.z;
-                                        CVector vec = *matrix * workVec;
-
-                                        // TODO: Rotate the camera to face the object
-
-                                        Viewport.SetCameraPosn(vec);
-                                        ObjMgr.m_pSelected = pObj;
-                                    }
+                                if (data.m_modelName == "") {
+                                    data.m_modelName = ObjMgr.FindNameFromModel(pObj->m_nModelIndex);
                                 }
+                                char buf[32];
+                                sprintf(buf, "%d. %s(%d)", i+1, data.m_modelName.c_str(), pObj->m_nModelIndex);
 
-                                ImGui::EndChild();
+                                if (filter.PassFilter(buf) && ImGui::MenuItem(buf)) {
+                                    Action_MoveCamToObject(pObj);
+                                }
+                                if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                                    ContextMenu.m_bShow = true;
+                                    ContextMenu.m_pFunc = ContextMenu_RegularMenu;
+                                    ContextMenu.m_Key = data.m_modelName;
+                                    ContextMenu.m_Val = std::to_string((int)pObj);
+                                }
                             }
+                            ContextMenu.Draw();
+                            ImGui::EndChild();
                         }
                         ImGui::EndTabItem();
                     }
@@ -516,22 +520,23 @@ void InterfaceMgr::DrawSidepanel() {
                             m_bInputLocked = true;
                         }
                         ImGui::Spacing();
-                        if(ImGui::BeginChild("Browser")) {
-                            for (auto &data : *pData) {
-                                std::string text = std::to_string(data.first) + " - " +  data.second;
-                                if (IplFilter.PassFilter(text.c_str())) {
-                                    if (ImGui::MenuItem(text.c_str())) {
-                                        Viewport.m_Renderer.SetSelected(data.first);
-                                    }
-                                    if (ImGui::IsItemClicked(1)) {
-                                        ContextMenu.m_pFunc = ContextMenu_Search;
-                                        ContextMenu.m_Key = data.second;
-                                        ContextMenu.m_Val = std::to_string(data.first);
-                                    }
+                        ImGui::BeginChild("Browser");
+                        for (auto &data : *pData) {
+                            std::string text = std::to_string(data.first) + " - " +  data.second;
+                            if (IplFilter.PassFilter(text.c_str())) {
+                                if (ImGui::MenuItem(text.c_str())) {
+                                    Viewport.m_Renderer.SetSelected(data.first);
+                                }
+                                if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                                    ContextMenu.m_bShow = true;
+                                    ContextMenu.m_pFunc = ContextMenu_RegularNoRemoveMenu;
+                                    ContextMenu.m_Key = data.second;
+                                    ContextMenu.m_Val = std::to_string(data.first);
                                 }
                             }
-                            ImGui::EndChild();
                         }
+                        ContextMenu.Draw();
+                        ImGui::EndChild();
                         ImGui::EndTabItem();
                     }
                     if(ImGui::BeginTabItem("Full search")) {
@@ -560,20 +565,21 @@ full_search:
                             }
                         }
                         ImGui::Spacing();
-                        if(ImGui::BeginChild("FS Child")) {
-                            for (auto &data : searchResults) {
-                                std::string text = std::to_string(data.first) + " - " +  data.second;
-                                if (ImGui::MenuItem(text.c_str())) {
-                                    Viewport.m_Renderer.SetSelected(data.first);
-                                }
-                                if (ImGui::IsItemClicked(1)) {
-                                    ContextMenu.m_pFunc = ContextMenu_Search;
-                                    ContextMenu.m_Key = data.second;
-                                    ContextMenu.m_Val = std::to_string(data.first);
-                                }
+                        ImGui::BeginChild("FS Child");
+                        for (auto &data : searchResults) {
+                            std::string text = std::to_string(data.first) + " - " +  data.second;
+                            if (ImGui::MenuItem(text.c_str())) {
+                                Viewport.m_Renderer.SetSelected(data.first);
                             }
-                            ImGui::EndChild();
+                            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+                                ContextMenu.m_bShow = true;
+                                ContextMenu.m_pFunc = ContextMenu_RegularNoRemoveMenu;
+                                ContextMenu.m_Key = data.second;
+                                ContextMenu.m_Val = std::to_string(data.first);
+                            }
                         }
+                        ContextMenu.Draw();
+                        ImGui::EndChild();
                         ImGui::EndTabItem();
                     }
                     if(ImGui::BeginTabItem("Favourites")) {

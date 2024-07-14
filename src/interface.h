@@ -5,17 +5,8 @@ class InterfaceMgr {
   private:
     ResourceStore m_locData{ "locations", eResourceType::TYPE_TEXT };
 
-    // Draws the control panel at the top left of the screen
-    void DrawTooltipPanel();
-
-    // Draws the top black bar contains menu options
     void DrawMainMenuBar();
-
-    // Draws the object specific right side pnael
     void DrawSidepanel();
-
-    // Draws the popups at the center of the screen
-    void DrawPopupMenu();
 
   public:
     bool m_bAutoSave = true;

@@ -519,7 +519,7 @@ void ViewportMgr::ProcessInputs() {
                 ContextMenu_Paste();
             }
             if(deleteKey.Pressed()) {
-                ContextMenu_Delete();
+                Action_RemoveSelectedObject();
             }
             if(snapKey.Pressed()) {
                 ContextMenu_SnapToGround();

@@ -50,14 +50,9 @@ create_object:
     }
 }
 
-void ContextMenu_Search(std::string& root, std::string& key, std::string& value) {
+void ContextMenu_RegularNoRemoveMenu(std::string& root, std::string& key, std::string& value) {
     if (ImGui::MenuItem("Add to favourites")) {
-        int model = std::stoi(value);
-        std::string keyName = value + " - " + ObjMgr.FindNameFromModel(model);
-        Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
-        Interface.m_favData.m_pData->Save();
-        Interface.m_favData.UpdateSearchList();
-        CHud::SetHelpMessage("Added to favourites", false, false, false);
+        Action_AddToFavourites(std::stoi(value));
     };
 
     if (ImGui::MenuItem("Copy")) {
@@ -140,7 +135,7 @@ void ContextMenu_Paste() {
     }
 }
 
-void ContextMenu_Delete() {
+void Action_RemoveSelectedObject() {
     if (ObjMgr.m_pSelected) {
         ObjMgr.m_pSelected->Remove();
         ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
@@ -148,6 +143,27 @@ void ContextMenu_Delete() {
 
         ObjMgr.m_pSelected = nullptr;
     }
+}
+
+void Action_MoveCamToObject(CObject *pObj) {
+    CMatrix *matrix = pObj->GetMatrix();
+    CColModel *pColModel = pObj->GetColModel();
+    CVector min = pColModel->m_boundBox.m_vecMin;
+    CVector max = pColModel->m_boundBox.m_vecMax;
+
+    CVector vec = {(min.x + max.x)/2, (min.y + max.y)/2, max.z};
+    vec = *matrix * vec;
+
+    Viewport.SetCameraPosn(vec);
+    ObjMgr.m_pSelected = pObj;
+}
+
+void Action_AddToFavourites(int model) {
+    std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
+    Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
+    Interface.m_favData.m_pData->Save();
+    Interface.m_favData.UpdateSearchList(true);
+    CHud::SetHelpMessage("Added to favourites", false, false, false);
 }
 
 void ContextMenus::Draw() {
@@ -169,6 +185,30 @@ void ContextMenus::Draw() {
     }
 }
 
+void ContextMenu_RegularMenu(std::string& root, std::string& key, std::string& value) {
+    if (ImGui::MenuItem("Add to favourites")) {
+        int model = ((CObject*)std::stoi(value))->m_nModelIndex;
+        Action_AddToFavourites(model);
+        ContextMenu.m_bShow = false;
+    };
+
+    if (ImGui::MenuItem("Copy")) {
+        ObjMgr.ClipBoard.m_nModel = std::stoi(value);
+        CHud::SetHelpMessage("Object Copied", false, false, false);
+        ContextMenu.m_bShow = false;
+    }
+
+    if (ImGui::MenuItem("Remove")) {
+        CObject *pObj = (CObject*)std::stoi(value);
+        if (pObj) {
+            pObj->Remove();
+            ObjMgr.m_pPlacedObjs.erase(std::remove(ObjMgr.m_pPlacedObjs.begin(),
+                                            ObjMgr.m_pPlacedObjs.end(), pObj), ObjMgr.m_pPlacedObjs.end());
+        }
+        ContextMenu.m_bShow = false;
+    }
+}
+
 void ContextMenu_Viewport(std::string& root, std::string& key, std::string& value) {
     if (Viewport.m_Renderer.m_bShown || Viewport.m_eState != eViewportState::Edit) {
         return;
@@ -176,15 +216,12 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
 
     if (ImGui::MenuItem("New object")) {
         ContextMenu_NewObject();
+        ContextMenu.m_bShow = false;
     }
 
     if (ImGui::MenuItem("Add to favourites")) {
         int model = Viewport.m_HoveredEntity->m_nModelIndex;
-        std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
-        Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
-        Interface.m_favData.m_pData->Save();
-        Interface.m_favData.UpdateSearchList();
-        CHud::SetHelpMessage("Added to favourites", false, false, false);
+        Action_AddToFavourites(model);
         ContextMenu.m_bShow = false;
     }
     ImGui::Separator();
@@ -204,7 +241,7 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
     }
 
     if (ImGui::MenuItem("Delete", NULL, false, ObjMgr.m_pSelected)) {
-        ContextMenu_Delete();
+        Action_RemoveSelectedObject();
         ContextMenu.m_bShow = false;
     }
     ImGui::Separator();

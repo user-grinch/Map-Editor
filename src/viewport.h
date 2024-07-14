@@ -26,11 +26,7 @@ class ViewportMgr {
     // Used for inputs and context menu creation
     void DrawOverlay();
 
-    // Highlights the currently selected object in red
     void HighlightSelection(CEntity *pEntity); 
-
-    // Processes input for the currently selected object
-    // TODO: Should be in ObjManager class?
     void ProcessInputs();
 
   public:

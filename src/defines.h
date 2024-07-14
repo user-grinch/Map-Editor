@@ -4,7 +4,7 @@
 #define EDITOR_VERSION EDITOR_VERSION_NUMBER"-beta"
 #define EDITOR_TITLE EDITOR_NAME " v" EDITOR_VERSION
 
-#define DISCORD_INVITE "https://discord.gg/ZzW7kmf"
+#define DISCORD_INVITE "https://discord.gg/AduJVdyqCD"
 #define GITHUB_LINK "https://github.com/user-grinch/Map-Editor"
 #define PATREON_LINK "https://www.patreon.com/grinch_"
 
