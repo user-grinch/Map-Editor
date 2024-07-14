@@ -42,7 +42,7 @@ create_object:
     ImGui::SameLine();
     if (ImGui::Button("Find models", Utils::GetSize(2))) {
         ShellExecute(NULL, "open", "https://dev.prineside.com/en/gtasa_samp_model_id/", NULL, NULL, SW_SHOWNORMAL);
-    }
+    } 
     ImGui::Spacing();
     if (ImGui::Button("Open object browser", Utils::GetSize())) {
         Popup.m_bShow = false;
@@ -160,7 +160,7 @@ void Action_MoveCamToObject(CObject *pObj) {
 
 void Action_AddToFavourites(int model) {
     std::string keyName = std::to_string(model) + " - " + ObjMgr.FindNameFromModel(model);
-    Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), model);
+    Interface.m_favData.m_pData->Set(std::format("Favourites.{}", keyName).c_str(), std::to_string(model));
     Interface.m_favData.m_pData->Save();
     Interface.m_favData.UpdateSearchList(true);
     CHud::SetHelpMessage("Added to favourites", false, false, false);
