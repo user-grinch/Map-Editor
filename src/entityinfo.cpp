@@ -34,8 +34,7 @@ CVector EntityInfo::GetEuler() {
 }
 
 CQuaternion EntityInfo::GetQuat() {
-    plugin::Command<plugin::Commands::GET_OBJECT_QUATERNION>(m_nHandle, &m_Quat.imag.x, &m_Quat.imag.y, 
-         &m_Quat.imag.z, &m_Quat.real);
+    m_Quat.Set(*RwFrameGetMatrix(RwFrameGetParent(m_pObj->m_pRwObject)));
     return m_Quat;
 }
 
@@ -43,4 +42,11 @@ void EntityInfo::SetQuat(CQuaternion quat) {
     m_Quat = quat;
     plugin::Command<plugin::Commands::SET_OBJECT_QUATERNION>(m_nHandle, m_Quat.imag.x, m_Quat.imag.y, 
          m_Quat.imag.z, m_Quat.real);
+    CVector rot;
+    //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
+    CallMethod<0x59A840, int>((int)m_pObj->GetMatrix(), &rot.x, &rot.y, &rot.z, 0); 
+    rot.x = RAD_TO_DEG(rot.x);
+    rot.y = RAD_TO_DEG(rot.y);
+    rot.z = RAD_TO_DEG(rot.z);
+    SetEuler(rot);
 }
