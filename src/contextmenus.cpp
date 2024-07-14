@@ -86,19 +86,11 @@ void ContextMenu_Copy() {
     if (Viewport.m_HoveredEntity) {
         EntMgr.ClipBoard.m_nModel = Viewport.m_HoveredEntity->m_nModelIndex;
 
-        CVector &rot = EntMgr.ClipBoard.m_Rot;
-        // Store rotation
-        CallMethod<0x59A840, int>((int)Viewport.m_HoveredEntity->GetMatrix(),
-                                  &rot.x, &rot.y, &rot.z, 0); //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
+        Viewport.m_HoveredEntity->GetOrientation(EntMgr.ClipBoard.m_Rot.x, EntMgr.ClipBoard.m_Rot.y, EntMgr.ClipBoard.m_Rot.z);
+        EntMgr.ClipBoard.m_Rot.x = RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.x);
+        EntMgr.ClipBoard.m_Rot.y = RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.y);
+        EntMgr.ClipBoard.m_Rot.z = 360.0f - RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.z);
 
-        rot.x = RAD_TO_DEG(rot.x);
-        rot.y = RAD_TO_DEG(rot.y);
-        rot.z = RAD_TO_DEG(rot.z);
-
-        // 0 -> 360
-        Utils::GetDegreeInRange(&rot.x);
-        Utils::GetDegreeInRange(&rot.y);
-        Utils::GetDegreeInRange(&rot.z);
         CHud::SetHelpMessage("Object Copied", false, false, false);
     }
 }

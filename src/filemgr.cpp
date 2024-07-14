@@ -7,10 +7,8 @@
 #include <CHud.h>
 
 void FileMgr::ImportIPL(std::string fileName, bool logImports) {
-    static int counter = 0;
     std::fstream file;
-    std::string fullPath = PLUGIN_PATH((char*)FILE_NAME"/") + fileName;
-    file.open(fullPath.c_str(), std::ios::in);
+    file.open(PLUGIN_PATH((char*)FILE_NAME"/") + fileName, std::ios::in);
     std::string line;
 
     int model, interior, unk;

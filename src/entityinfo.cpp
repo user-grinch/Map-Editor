@@ -11,6 +11,10 @@ EntityInfo::EntityInfo(CObject *pObj) {
     m_nHandle = CPools::GetObjectRef(pObj);
 
     pObj->GetOrientation(m_Euler.x, m_Euler.y, m_Euler.z);
+    m_Euler.x = DEG_TO_RAD(m_Euler.x);
+    m_Euler.y = DEG_TO_RAD(m_Euler.y);
+    m_Euler.z = DEG_TO_RAD(m_Euler.z);
+
     if (m_pObj->m_pRwObject) {
         m_Quat.Set(*RwFrameGetMatrix(RwFrameGetParent(m_pObj->m_pRwObject)));
     }
@@ -18,7 +22,11 @@ EntityInfo::EntityInfo(CObject *pObj) {
 
 void EntityInfo::SetEuler(CVector rot) {
     m_Euler = rot;
-    m_pObj->SetOrientation(rot.x, rot.y, rot.z);
+    CWorld::Remove(m_pObj);
+    m_pObj->SetOrientation(DEG_TO_RAD(rot.x), DEG_TO_RAD(rot.y), DEG_TO_RAD(rot.z));
+    m_pObj->UpdateRwMatrix();
+    m_pObj->UpdateRwFrame();
+    CWorld::Add(m_pObj);
 }
 
 CVector EntityInfo::GetEuler() {

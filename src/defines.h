@@ -21,7 +21,8 @@
 #define MENU_DATA_EXISTS(x) (std::filesystem::exists(MENU_DATA_PATH(x)))
 #define OPEN_LINK(x) ShellExecute(nullptr, "open", x, nullptr, nullptr, SW_SHOWNORMAL)
 
-#define RAD_TO_DEG(x) x*-57.2958f
+#define RAD_TO_DEG(x) ((x) * 57.2958f)
+#define DEG_TO_RAD(x) ((x) * 0.0174533f)
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #define MENU_WIDTH_FACTOR_X 2.5f

@@ -321,10 +321,6 @@ void InterfaceMgr::DrawSidepanel() {
                     // Camera
                     if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
                         CVector pos = TheCamera.GetPosition();
-                        float heading = TheCamera.GetHeading();
-                        ImGui::Text("Heading: %f", heading);
-                        CVector test = TheCamera.m_vecAttachedCamLookAt; 
-                        ImGui::Text("Look at X:%f Y:%f Z:%f", test.x, test.y, test.z);
 
                         if (ImGui::InputFloat("Pos X##Cam", &pos.x)) {
                             Viewport.SetCameraPosn(pos);
