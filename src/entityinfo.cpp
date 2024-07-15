@@ -13,7 +13,7 @@ EntityInfo::EntityInfo(CObject *pObj) {
     pObj->GetOrientation(m_Euler.x, m_Euler.y, m_Euler.z);
     m_Euler.x = DEG_TO_RAD(m_Euler.x);
     m_Euler.y = DEG_TO_RAD(m_Euler.y);
-    m_Euler.z = DEG_TO_RAD(m_Euler.z);
+    m_Euler.z = DEG_TO_RAD(m_pObj->GetHeading());
 
     if (m_pObj->m_pRwObject) {
         m_Quat.Set(*RwFrameGetMatrix(RwFrameGetParent(m_pObj->m_pRwObject)));

@@ -89,7 +89,7 @@ void ContextMenu_Copy() {
         Viewport.m_HoveredEntity->GetOrientation(EntMgr.ClipBoard.m_Rot.x, EntMgr.ClipBoard.m_Rot.y, EntMgr.ClipBoard.m_Rot.z);
         EntMgr.ClipBoard.m_Rot.x = RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.x);
         EntMgr.ClipBoard.m_Rot.y = RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.y);
-        EntMgr.ClipBoard.m_Rot.z = 360.0f - RAD_TO_DEG(EntMgr.ClipBoard.m_Rot.z);
+        EntMgr.ClipBoard.m_Rot.z = RAD_TO_DEG(Viewport.m_HoveredEntity->GetHeading());
 
         CHud::SetHelpMessage("Object Copied", false, false, false);
     }
@@ -206,16 +206,82 @@ void ContextMenu_Viewport(std::string& root, std::string& key, std::string& valu
         return;
     }
 
-    if (ImGui::MenuItem("New object")) {
+    if (ImGui::MenuItem("New entity")) {
         ContextMenu_NewObject();
         ContextMenu.m_bShow = false;
     }
 
-    if (ImGui::MenuItem("Add to favourites")) {
-        int model = Viewport.m_HoveredEntity->m_nModelIndex;
-        Action_AddToFavourites(model);
-        ContextMenu.m_bShow = false;
+    if (ImGui::BeginMenu("Hovered entity", Viewport.m_HoveredEntity != nullptr)) {
+        if (ImGui::MenuItem("Add to favourites")) {
+            int model = Viewport.m_HoveredEntity->m_nModelIndex;
+            Action_AddToFavourites(model);
+            ContextMenu.m_bShow = false;
+        }
+        if (ImGui::BeginMenu("Copy to selected", EntMgr.m_pSelected != nullptr)) {
+            CVector coordSelected = EntMgr.m_pSelected->GetPosition();
+            CVector coordHovered = Viewport.m_HoveredEntity->GetPosition();
+            CVector rotSelected = EntMgr.m_Info.Get(EntMgr.m_pSelected).GetEuler();
+            CVector rotHovered;
+            Viewport.m_HoveredEntity->GetOrientation(rotHovered.x, rotHovered.y, rotHovered.z);
+            rotHovered.x = RAD_TO_DEG(rotHovered.x);
+            rotHovered.y = RAD_TO_DEG(rotHovered.y);
+            rotHovered.z = RAD_TO_DEG(Viewport.m_HoveredEntity->GetHeading());
+
+            if (ImGui::MenuItem("X Coord##C2S")) {
+                EntMgr.m_pSelected->SetPosn(coordHovered.x, coordSelected.y, coordSelected.z);
+                EntMgr.m_pSelected->UpdateRwMatrix();
+                EntMgr.m_pSelected->UpdateRwFrame();
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("Y Coord##C2S")) {
+                EntMgr.m_pSelected->SetPosn(coordSelected.x, coordHovered.y, coordSelected.z);
+                EntMgr.m_pSelected->UpdateRwMatrix();
+                EntMgr.m_pSelected->UpdateRwFrame();
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("Z Coord##C2S")) {
+                EntMgr.m_pSelected->SetPosn(coordSelected.x, coordSelected.y, coordHovered.z);
+                EntMgr.m_pSelected->UpdateRwMatrix();
+                EntMgr.m_pSelected->UpdateRwFrame();
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("XYZ Coord##C2S")) {
+                EntMgr.m_pSelected->SetPosn(coordHovered.x, coordHovered.y, coordHovered.z);
+                EntMgr.m_pSelected->UpdateRwMatrix();
+                EntMgr.m_pSelected->UpdateRwFrame();
+                ContextMenu.m_bShow = false;
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("X Rotation##C2S")) {
+                EntMgr.m_Info.Get(EntMgr.m_pSelected).SetEuler({rotHovered.x, rotSelected.y, rotSelected.z});
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("Y Rotation##C2S")) {
+                EntMgr.m_Info.Get(EntMgr.m_pSelected).SetEuler({rotSelected.x, rotHovered.y, rotSelected.z});
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("Z Rotation##C2S")) {
+                EntMgr.m_Info.Get(EntMgr.m_pSelected).SetEuler({rotSelected.x, rotSelected.y, rotHovered.z});
+                ContextMenu.m_bShow = false;
+            }
+            if (ImGui::MenuItem("XYZ Rotation##C2S")) {
+                EntMgr.m_Info.Get(EntMgr.m_pSelected).SetEuler({rotHovered.x, rotHovered.y, rotHovered.z});
+                ContextMenu.m_bShow = false;
+            }
+
+            ImGui::End();
+        }
+        if (ImGui::MenuItem("Open in browser")) {
+            int model = Viewport.m_HoveredEntity->m_nModelIndex;
+            Viewport.m_Renderer.SetSelected(model);
+            Viewport.m_Renderer.m_bShowNextFrame = true;
+            ContextMenu.m_bShow = false;
+        }
+        ImGui::End();
     }
+
     ImGui::Separator();
     if (ImGui::MenuItem("Snap to ground", NULL, false, EntMgr.m_pSelected)) {
         ContextMenu_SnapToGround();

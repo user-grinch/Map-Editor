@@ -114,7 +114,7 @@ void ViewportMgr::HighlightSelection(CEntity *pEntity) {
                     RpAtomic* atomic = reinterpret_cast<RpAtomic*>(object);
                     CEntity* pEntity = reinterpret_cast<CEntity*>(data);
                     for (int i = 0; i < atomic->geometry->matList.numMaterials; ++i) {
-                        if (pEntity == EntMgr.m_pSelected) {
+                        if (pEntity == EntMgr.m_pSelected && !Viewport.m_Renderer.m_bShown) {
                             atomic->geometry->matList.materials[i]->color = {255, 0, 0, 255}; 
                             atomic->geometry->flags |= rpGEOMETRYMODULATEMATERIALCOLOR;
                         } 
@@ -142,12 +142,12 @@ void ViewportMgr::SetCameraPosn(const CVector &pos) {
 }
 
 void ViewportMgr::DrawHoverMenu() {
-    if (!Interface.m_bShowHoverMenu || m_eState != eViewportState::Edit || !m_bHovered || m_Renderer.m_bShown) {
+    if ( m_eState != eViewportState::Edit || !m_bHovered || m_Renderer.m_bShown) {
         return;
     }
 
     CVector worldPos;
-    if (Utils::TraceEntity(m_HoveredEntity, worldPos)) {
+    if (Utils::TraceEntity(m_HoveredEntity, worldPos) && Interface.m_bShowHoverMenu) {
         ImGui::BeginTooltip();
         int model = m_HoveredEntity->m_nModelIndex;
         if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT
