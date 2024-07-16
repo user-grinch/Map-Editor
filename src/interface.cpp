@@ -11,6 +11,8 @@
 #include <CPopulation.h>
 #include <filesystem>
 #include <CStreaming.h>
+#include <extensions/ScriptCommands.h>
+#include <extensions/scripting/ScriptCommandNames.h>
 
 #include "contextmenus.h"
 #include "popups.h"
@@ -339,6 +341,37 @@ void InterfaceMgr::DrawSidepanel() {
                         if (ImGui::SliderFloat("Move speed", &Viewport.m_nMoveSpeedMul, 0.1f, 1.0f)) {
                             gConfig.Set("editor.moveSpeed", Viewport.m_nMoveSpeedMul);
                         }
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                    }
+
+                    if (ImGui::CollapsingHeader("Procedural generation")) {
+                        static bool snapToGround = true;
+                        static int count = 10, model = 620;
+                        static CVector low, high;
+
+                        float width = Utils::GetContentRegionWidth();
+                        ImGui::Checkbox("Snap to ground##PG", &snapToGround);
+                        ImGui::Spacing();
+                        ImGui::PushItemWidth(width / 1.0f);
+                        ImGui::InputInt("Model", &model);
+                        ImGui::InputInt("Total entities", &count);
+                        ImGui::PopItemWidth();
+                        ImGui::Dummy({0, 10});
+                        
+                        ImGui::Spacing();
+                        ImGui::PushItemWidth(width / 1.3);
+                        ImGui::Text("Top right back");
+                        ImGui::InputFloat3("##Top right back", (float*)&high);
+                        ImGui::Dummy({0, 2.5});
+                        ImGui::Text("Bottom left front");
+                        ImGui::InputFloat3("##Bottom left front", (float*)&low);
+                        ImGui::PopItemWidth();
+                        ImGui::Spacing();
+                        if (ImGui::Button("Generate", Utils::GetSize())) {
+                            Action_GenerateObjects(low, high, model, snapToGround, count);
+                        }
+
                         ImGui::Spacing();
                         ImGui::Separator();
                     }

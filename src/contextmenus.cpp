@@ -158,6 +158,75 @@ void Action_AddToFavourites(int model) {
     CHud::SetHelpMessage("Added to favourites", false, false, false);
 }
 
+
+CObject* Action_CreateObject(int model, float x, float y, float z) {
+    CObject *ptr;
+    auto player = FindPlayerPed();
+    CVector rot = {0, 0, 0};
+    if (Command<Commands::IS_MODEL_AVAILABLE>(model)) {
+        int hObj;
+        Command<Commands::REQUEST_MODEL>(model);
+        Command<Commands::LOAD_ALL_MODELS_NOW>();
+        Command<Commands::CREATE_OBJECT>(model, x, y, z, &hObj);
+
+        CObject *ptr = CPools::GetObject(hObj);
+        auto &data = EntMgr.m_Info.Get(ptr);
+        data.m_sModelName = EntMgr.FindNameFromModel(model);
+
+        if (Interface.m_bRandomRot) {
+            rot.x = RandomNumberInRange(Interface.m_RandomRotX[0], Interface.m_RandomRotX[1]);
+            rot.y = RandomNumberInRange(Interface.m_RandomRotY[0], Interface.m_RandomRotY[1]);
+            rot.z = RandomNumberInRange(Interface.m_RandomRotZ[0], Interface.m_RandomRotZ[1]);
+        }
+
+        data.SetEuler(rot);
+        EntMgr.m_pPlaced.push_back(ptr);
+        return ptr;
+    }
+    return nullptr;
+}
+
+void Action_GenerateObjects(CVector &low, CVector &high, unsigned int model, bool snap, unsigned int count) {
+    static bool injected = false;
+    static std::vector<CObject*> ptrs;
+    static size_t timer = 0;
+    if (!injected) { 
+        Events::processScriptsEvent += []() {
+            size_t cur = CTimer::m_snTimeInMilliseconds;
+            if (cur - timer > 200) {
+                for (auto e: ptrs) {
+                    CVector pos = e->GetPosition();
+                    float offZ = pos.z - EntMgr.GetBoundingBoxGroundZ(e);
+                    pos.z = CWorld::FindGroundZFor3DCoord(pos.x, pos.y, pos.z + 100.0f, nullptr, nullptr) + offZ;
+                    plugin::Command<plugin::Commands::SET_OBJECT_COORDINATES>(CPools::GetObjectRef(e), pos.x, pos.y, pos.z);
+                }
+                ptrs.clear();
+                timer = cur;
+            }
+        };
+        injected = true;
+    }
+
+    for (unsigned int i = 0; i < count; i++) {
+        float x = RandomNumberInRange(std::min(low.x, high.x), std::max(low.x, high.x));
+        float y = RandomNumberInRange(std::min(low.y, high.y), std::max(low.y, high.y));
+        float z = 100.0f;
+
+        CObject *ptr = Action_CreateObject(model, x, y, z);
+        
+        if (!ptr) continue;
+        
+        if (snap) {
+            ptrs.push_back(ptr);
+            timer = CTimer::m_snTimeInMilliseconds;
+        } else {
+            z = RandomNumberInRange(std::min(low.z, high.z), std::max(low.z, high.z));
+        }
+
+        Command<Commands::MARK_MODEL_AS_NO_LONGER_NEEDED>(model);
+    }
+}
+
 void ContextMenus::Draw() {
     if (m_bShow) {
         if (ImGui::BeginPopupContextWindow("ContextMenu")) {

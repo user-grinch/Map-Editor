@@ -12,6 +12,7 @@ class ContextMenus {
 };
 
 void Action_AddToFavourites(int model);
+void Action_GenerateObjects(CVector &low, CVector &high, unsigned int model, bool snap, unsigned int count);
 void Action_MoveCamToObject(CObject* pObj);
 void Action_RemoveSelectedObject();
 

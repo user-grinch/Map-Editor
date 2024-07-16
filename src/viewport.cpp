@@ -14,6 +14,7 @@
 
 #include "contextmenus.h"
 #include "popups.h"
+#include "tooltips.h"
 
 // Backups for restoring later on editor exit
 static BYTE m_bHudState;
@@ -146,35 +147,41 @@ void ViewportMgr::DrawHoverMenu() {
         return;
     }
 
-    CVector worldPos;
-    if (Utils::TraceEntity(m_HoveredEntity, worldPos) && Interface.m_bShowHoverMenu) {
-        ImGui::BeginTooltip();
-        int model = m_HoveredEntity->m_nModelIndex;
-        if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT
-                || m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING) {
-            static int bmodel = 0;
-            static std::string name = "";
+    static CVector worldPos;
+    if (Utils::TraceEntity(m_HoveredEntity, worldPos) && Interface.m_bShowHoverMenu && !Viewport.m_Renderer.m_bShown) {
+        Tooltip.m_Title = "##Hover Info";
+        Tooltip.m_bShow = true;
+        Tooltip.m_pFunc = [this]() {
+            ImGui::Text("Hover Info");
+            ImGui::Separator();
+            int model = m_HoveredEntity->m_nModelIndex;
+            if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT
+                    || m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING) {
+                static int bmodel = 0;
+                static std::string name = "";
 
-            // lets not go over 20000 models each frame
-            if (bmodel != model) {
-                name = EntMgr.FindNameFromModel(model);
-                bmodel = model;
+                // lets not go over 20000 models each frame
+                if (bmodel != model) {
+                    name = EntMgr.FindNameFromModel(model);
+                    bmodel = model;
+                }
+
+                ImGui::Text("Name: %s", name.c_str());
+            }
+            std::string type = "";
+
+            if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT) {
+                type = "Dynamic";
+            }
+            if (m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING) {
+                type = "Static";
             }
 
-            ImGui::Text("Name: %s", name.c_str());
-        }
-        std::string type = "";
-
-        if (m_HoveredEntity->m_nType == ENTITY_TYPE_OBJECT) {
-            type = "Dynamic";
-        }
-        if (m_HoveredEntity->m_nType == ENTITY_TYPE_BUILDING) {
-            type = "Static";
-        }
-
-        ImGui::Text("Model: %d (%s)", model, type.c_str());
-        ImGui::EndTooltip();
+            ImGui::Text("Model: %d (%s)", model, type.c_str());
+            ImGui::Text("Position: %d, %d, %d", int(worldPos.x), int(worldPos.y), int (worldPos.z));
+        };
     }
+    Tooltip.Draw();
 }
 
 void ViewportMgr::Cleanup() {
