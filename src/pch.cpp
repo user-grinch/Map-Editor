@@ -11,3 +11,4 @@ Hotkey editorOpenKey(VK_LCONTROL, VK_TAB);
 Hotkey viewportSwitchKey(VK_KEY_E, VK_KEY_E);
 Hotkey toggleUIKey(VK_LCONTROL, VK_KEY_P);
 Hotkey copyHoveredObjName(VK_LSHIFT, VK_KEY_C);
+Hotkey objBrowserSwitch(VK_LCONTROL, VK_KEY_B);

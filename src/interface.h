@@ -22,6 +22,7 @@ class InterfaceMgr {
     bool m_bShowSidepanel; // tooltip on top left
     bool m_bWelcomeShown;
     bool m_bRandomRot; // places objects randomly
+    bool m_bShowEditorNextFrame;
     float m_RandomRotX[2], m_RandomRotY[2], m_RandomRotZ[2]; // min max rotations
     ResourceStore m_favData{ "favourites", eResourceType::TYPE_TEXT };
 

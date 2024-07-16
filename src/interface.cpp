@@ -227,8 +227,9 @@ void InterfaceMgr::DrawSidepanel() {
             // ---------------------------------------------------
             // Editor Tab
             Tooltip.m_bShow = false; // reset
-            if(ImGui::BeginTabItem("Editor")) {
+            if(ImGui::BeginTabItem("Editor", NULL, Interface.m_bShowEditorNextFrame ? ImGuiTabItemFlags_SetSelected : NULL)) {
                 if (ImGui::BeginChild("Editor child")) {
+                    Interface.m_bShowEditorNextFrame = false;
                     ImGui::Dummy({0, 20});
                     // ---------------------------------------------------
                     // Object infoF
@@ -353,7 +354,7 @@ void InterfaceMgr::DrawSidepanel() {
                         float width = Utils::GetContentRegionWidth();
                         ImGui::Checkbox("Snap to ground##PG", &snapToGround);
                         ImGui::Spacing();
-                        ImGui::PushItemWidth(width / 1.0f);
+                        ImGui::PushItemWidth(width / 2.0f);
                         ImGui::InputInt("Model", &model);
                         ImGui::InputInt("Total entities", &count);
                         ImGui::PopItemWidth();
@@ -361,10 +362,10 @@ void InterfaceMgr::DrawSidepanel() {
                         
                         ImGui::Spacing();
                         ImGui::PushItemWidth(width / 1.3);
-                        ImGui::Text("Top right back");
+                        ImGui::Text("Corner 1 (Top right back)");
                         ImGui::InputFloat3("##Top right back", (float*)&high);
                         ImGui::Dummy({0, 2.5});
-                        ImGui::Text("Bottom left front");
+                        ImGui::Text("Corner 2 (Bottom left front)");
                         ImGui::InputFloat3("##Bottom left front", (float*)&low);
                         ImGui::PopItemWidth();
                         ImGui::Spacing();
@@ -502,13 +503,18 @@ void InterfaceMgr::DrawSidepanel() {
                 Tooltip.m_bShow = true;
                 Tooltip.m_pFunc = Tooltip_Browser;
 
+                if (objBrowserSwitch.Pressed()) {
+                    Viewport.m_Renderer.m_bShown = false;
+                    Interface.m_bShowEditorNextFrame = true;
+                }
+
                 static ImGuiTextFilter filter;
                 static std::string selectedIDE = EntMgr.m_NameList.begin()->first;
                 static std::map<EntityMgr::ModelID, EntityMgr::ModelName> *pSelectedIDE = &EntMgr.m_NameList[selectedIDE];
                 
                 ImGui::Spacing();
-                ImGui::Text("Total IDEs loaded: %d", EntMgr.m_IdeList.size());
-                ImGui::Text("Total entities loaded: %d", EntMgr.m_nTotalEntities);
+                ImGui::Text("Total IDEs found: %d", EntMgr.m_IdeList.size());
+                ImGui::Text("Total entities found: %d", EntMgr.m_nTotalEntities);
                 ImGui::Spacing();
                 ImGui::Checkbox("Auto rotate", &Viewport.m_Renderer.m_bAutoRot);
                 ImGui::SetNextItemWidth(Utils::GetContentRegionWidth()/2);
@@ -615,6 +621,11 @@ full_search:
                 ImGui::EndTabItem();
             } else {
                 Viewport.m_Renderer.m_bShown = false;
+
+                if (objBrowserSwitch.Pressed()) {
+                    Viewport.m_Renderer.m_bShowNextFrame = true;
+                    Interface.m_bShowEditorNextFrame = false;
+                }
             }
             // ---------------------------------------------------
             ImGui::EndTabBar();

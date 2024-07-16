@@ -193,7 +193,7 @@ void Action_GenerateObjects(CVector &low, CVector &high, unsigned int model, boo
     if (!injected) { 
         Events::processScriptsEvent += []() {
             size_t cur = CTimer::m_snTimeInMilliseconds;
-            if (cur - timer > 200) {
+            if (ptrs.size() > 0 && cur - timer > 200) {
                 for (auto e: ptrs) {
                     CVector pos = e->GetPosition();
                     float offZ = pos.z - EntMgr.GetBoundingBoxGroundZ(e);

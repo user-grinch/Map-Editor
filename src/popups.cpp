@@ -232,6 +232,12 @@ void Popup_Controls() {
 
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
+            ImGui::Text("Open/ Close Key");
+            ImGui::TableNextColumn();
+            ImGui::Text("LCtrl + B");
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
             ImGui::Text("Rotate (view mode)");
             ImGui::TableNextColumn();
             ImGui::Text("Mouse");

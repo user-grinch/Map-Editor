@@ -60,3 +60,4 @@ extern Hotkey editorOpenKey;
 extern Hotkey viewportSwitchKey;
 extern Hotkey toggleUIKey;
 extern Hotkey copyHoveredObjName;
+extern Hotkey objBrowserSwitch;
