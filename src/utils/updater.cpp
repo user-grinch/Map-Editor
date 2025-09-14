@@ -26,7 +26,7 @@ void Updater::Process() {
     }
 
     const char* link = "https://api.github.com/repos/user-grinch/Map-Editor/tags";
-    char* path = PLUGIN_PATH((char*)FILE_NAME "/data/versioninfo.json");
+    const char* path = PLUGIN_PATH((char*)FILE_NAME "/data/versioninfo.json");
     HRESULT res = URLDownloadToFile(NULL, link, path, 0, NULL);
 
     if (res == E_OUTOFMEMORY || res == INET_E_DOWNLOAD_FAILURE) {

@@ -20,7 +20,7 @@ workspace "MapEditorSA"
     architecture "x86"
     platforms "Win32"
     language "C++"
-    cppdialect "C++latest"
+    cppdialect "C++20"
     characterset "MBCS"
     staticruntime "On"
     location "../build"
@@ -61,6 +61,7 @@ workspace "MapEditorSA"
             "../include/",
             PSDK_DIR .. "/plugin_sa/",
             PSDK_DIR .. "/plugin_sa/game_sa/",
+            PSDK_DIR .. "/plugin_sa/game_sa/rw/",
             PSDK_DIR .. "/shared/",
             PSDK_DIR .. "/shared/game/",
             DX9SDK_DIR .. "/Include"
@@ -71,14 +72,12 @@ workspace "MapEditorSA"
         }
         
         defines { 
+            "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
             "_CRT_SECURE_NO_WARNINGS",
             "_CRT_NON_CONFORMING_SWPRINTFS",
-            "GTASA",
-            "_GTA_",
-            "_DX9_SDK_INSTALLED",
             "PLUGIN_SGV_10US",
-            "GTASA", 
-            "RW"
+            "GTASA",
+            "RW",
         }
 
         pchheader "pch.h"

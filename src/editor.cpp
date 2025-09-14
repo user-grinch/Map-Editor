@@ -55,12 +55,6 @@ EditorMgr::EditorMgr() {
 
         bool modloader = GetModuleHandle("modloader.asi");
         const char *path = PLUGIN_PATH((char*)"");
-        Log::Print<eLogLevel::None>("Install location: {}", modloader && strstr(path, "modloader") ? "Modloader" : "Game directory");
-        Log::Print<eLogLevel::None>("FLA installed: {}", GetModuleHandle("$fastman92limitAdjuster.asi") ? "True" : "False");
-        Log::Print<eLogLevel::None>("Modloader installed: {}", modloader ? "True" : "False");
-        Log::Print<eLogLevel::None>("OLA installed: {}", GetModuleHandle("III.VC.SA.LimitAdjuster.asi") ? "True" : "False");
-        Log::Print<eLogLevel::None>("Renderhook installed: {}", GetModuleHandle("_gtaRenderHook.asi") ? "True" : "False");
-        Log::Print<eLogLevel::None>("");
 
         // Checking for updates once a day
         if (gConfig.Get("Menu.LastUpdateChecked", 0) != st.wDay) {

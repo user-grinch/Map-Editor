@@ -52,7 +52,7 @@ void ViewportMgr::Init() {
     patch::Set<BYTE>(0xBA676C, 2); // radar
 
     CPad::GetPad(0)->DisablePlayerControls = true;
-    pPlayer->m_bIsVisible = true;
+    pPlayer->bIsVisible = true;
 
     Command<Commands::FREEZE_CHAR_POSITION_AND_DONT_LOAD_COLLISION>(hPlayer, true);
     Command<Commands::SET_CHAR_COLLISION>(hPlayer, false);
