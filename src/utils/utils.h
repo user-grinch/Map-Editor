@@ -16,4 +16,5 @@ class Utils {
     static float GetContentRegionWidth();
     static void CalcScreenCoords(D3DXVECTOR3* vecWorld, D3DXVECTOR3* vecScreen);
     static bool WorldToScreen(float x, float y, float z, float& screenX, float& screenY);
+    static float NormalizeAngle(float angle);
 };

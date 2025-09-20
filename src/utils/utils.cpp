@@ -144,3 +144,9 @@ void Utils::GetDegreeInRange(float *var) {
         *var -= 360.0f;
     }
 }
+
+float Utils::NormalizeAngle(float angle) {
+    angle = fmodf(angle, 360.0f);
+    if (angle < 0.0f) angle += 360.0f;
+    return angle;
+}

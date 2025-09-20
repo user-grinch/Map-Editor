@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "entityinfo.h"
 #include <CQuaternion.h>
+#include "utils/utils.h"
 
 EntityInfo::EntityInfo(CObject *pObj) {
     if (!pObj) {
@@ -14,10 +15,6 @@ EntityInfo::EntityInfo(CObject *pObj) {
     m_Euler.x = DEG_TO_RAD(m_Euler.x);
     m_Euler.y = DEG_TO_RAD(m_Euler.y);
     m_Euler.z = DEG_TO_RAD(m_pObj->GetHeading());
-
-    if (m_pObj->m_pRwObject) {
-        m_Quat.Set(*RwFrameGetMatrix(RwFrameGetParent(m_pObj->m_pRwObject)));
-    }
 }
 
 void EntityInfo::SetEuler(CVector rot) {
@@ -34,19 +31,24 @@ CVector EntityInfo::GetEuler() {
 }
 
 CQuaternion EntityInfo::GetQuat() {
-    m_Quat.Set(*RwFrameGetMatrix(RwFrameGetParent(m_pObj->m_pRwObject)));
-    return m_Quat;
+    CQuaternion quat;
+    plugin::Command<plugin::Commands::GET_OBJECT_QUATERNION>(m_nHandle, &quat.imag.x, &quat.imag.y, 
+         &quat.imag.z, &quat.real);
+    return quat;
 }
 
 void EntityInfo::SetQuat(CQuaternion quat) {
-    m_Quat = quat;
-    plugin::Command<plugin::Commands::SET_OBJECT_QUATERNION>(m_nHandle, m_Quat.imag.x, m_Quat.imag.y, 
-         m_Quat.imag.z, m_Quat.real);
-    CVector rot;
+    CWorld::Remove(m_pObj);
+    plugin::Command<plugin::Commands::SET_OBJECT_QUATERNION>(m_nHandle, quat.imag.x, quat.imag.y, 
+         quat.imag.z, quat.real);
+
+    m_pObj->UpdateRwMatrix();
+    m_pObj->UpdateRwFrame();
+    CWorld::Add(m_pObj);
+
     //void __thiscall CMatrix::ConvertToEulerAngles(CMatrix *this, float *pX, float *pY, float *pZ, unsigned int flags)
-    CallMethod<0x59A840, int>((int)m_pObj->GetMatrix(), &rot.x, &rot.y, &rot.z, 0); 
-    rot.x = RAD_TO_DEG(rot.x);
-    rot.y = RAD_TO_DEG(rot.y);
-    rot.z = RAD_TO_DEG(rot.z);
-    SetEuler(rot);
+    CallMethod<0x59A840, int>((int)m_pObj->GetMatrix(), &m_Euler.x, &m_Euler.y, &m_Euler.z, 0); 
+    m_Euler.x = Utils::NormalizeAngle(RAD_TO_DEG(m_Euler.x));
+    m_Euler.y = Utils::NormalizeAngle(RAD_TO_DEG(m_Euler.y));
+    m_Euler.z = Utils::NormalizeAngle(RAD_TO_DEG(m_pObj->GetHeading())) - 90.0f;
 }

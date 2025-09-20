@@ -12,9 +12,7 @@
 */
 class EntityInfo {
   private:
-    // stored in degrees
     CVector m_Euler {0, 0, 0}; 
-    CQuaternion m_Quat {{0, 0, 0}, 0};
 
   public:
     int m_nHandle; 
