@@ -11,10 +11,8 @@
   Stores MapEditor object specific data
 */
 class EntityInfo {
-  private:
-    CVector m_Euler {0, 0, 0}; 
-
   public:
+  CVector m_Euler;
     int m_nHandle; 
     CObject *m_pObj; 
     std::string m_sModelName;
